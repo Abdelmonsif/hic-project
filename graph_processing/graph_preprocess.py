@@ -123,7 +123,7 @@ class HicGraph:
         
         df.sort_values(by=['chromosome', 'chunk_start'], inplace=True) # sort according to chromosome, then chunk start
         df.reset_index(drop=True, inplace=True) # reset the sorted index
-        df.to_csv(out_dir) # save to csv file
+        df.to_csv(out_dir, index=False) # save to csv file
         time_elapsed = time.time()-start 
         print('time elapsed for exporting nodes: ', time_elapsed)
 
