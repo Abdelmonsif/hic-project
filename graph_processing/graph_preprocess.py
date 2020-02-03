@@ -1,3 +1,7 @@
+"""
+Pre-process the gexf file for hi-c graph for storage efficiency. There are 2 output files, 
+one for edges and one for the nodes.
+"""
 import argparse
 import networkx as nx
 import h5py
@@ -88,11 +92,11 @@ class HicGraph:
             edge_id_array[i] = edge_attr['id']# put edge id in the ith element of edge_id_array
             i += 1
         #-------------------- end of for loop ---------------------
-        edge_grp.create_dataset('edge_list', data=edge_list_array) # write to hdf5    
-        edge_grp.create_dataset('contactCount', data=contactCount_array)
-        edge_grp.create_dataset('p_values', data=p_value_array)
-        edge_grp.create_dataset('q_values', data=q_value_array)
-        edge_grp.create_dataset('edge_ids', data=edge_id_array)
+        edge_grp.create_dataset('edge_list', data=edge_list_array, dtype='i') # write to hdf5    
+        edge_grp.create_dataset('contactCount', data=contactCount_array, dtype='i')
+        edge_grp.create_dataset('p_values', data=p_value_array, dtype='f')
+        edge_grp.create_dataset('q_values', data=q_value_array, dtype='f')
+        edge_grp.create_dataset('edge_ids', data=edge_id_array, dtype='i')
 
         time_elapsed = time.time()-start 
         print('time elapsed for exporting edges: ', time_elapsed)
@@ -120,7 +124,6 @@ class HicGraph:
         df.sort_values(by=['chromosome', 'chunk_start'], inplace=True) # sort according to chromosome, then chunk start
         df.reset_index(drop=True, inplace=True) # reset the sorted index
         df.to_csv(out_dir) # save to csv file
-        print(df.iloc[0])
         time_elapsed = time.time()-start 
         print('time elapsed for exporting nodes: ', time_elapsed)
 
