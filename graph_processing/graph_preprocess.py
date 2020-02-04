@@ -32,7 +32,12 @@ def get_args():
 
 class HicGraph:
     def __init__(self, data_dir):
+        start=time.time()
+        print('reading original gexf...')
         self.hic_graph = nx.read_gexf(data_dir) 
+        time_elapsed = time.time()-start 
+        print('time elapsed for reading original gexf: ', time_elapsed)        
+        
         self.num_nodes = nx.number_of_nodes(self.hic_graph)
         self.num_edges = len(list(self.hic_graph.edges))
         
@@ -69,6 +74,7 @@ class HicGraph:
             3. q-value.
             4. id.
         """
+        print('exporting edges to h5...')
         start=time.time()
         f = h5py.File(out_dir, "w") # create
         f = h5py.File(out_dir, "a") # append
@@ -109,6 +115,7 @@ class HicGraph:
             3. chunk-start (start position of the chunk represented by this node, integer).
             4. chunk-end (end position of the chunk represented by this node, integer).
         """
+        print('exporting nodes to csv...')
         start = time.time()
         index = range(self.num_nodes)
         columns = ['node_id', 'chr', 'chunk_start', 'chunk_end']
