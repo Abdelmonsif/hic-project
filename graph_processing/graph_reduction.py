@@ -36,9 +36,9 @@ class HicGraph:
         
         self.hic_graph = nx.Graph() # create empty graph
         node_list = nodes['node_id'] # get node list
-        node_chromosome = nodes['chr'] # get chromosome
-        node_chunk_start = nodes['chunk_start'] # get chunk start
-        node_chunk_end = nodes['chunk_end'] # get chunk end
+        #node_chromosome = nodes['chr'] # get chromosome
+        #node_chunk_start = nodes['chunk_start'] # get chunk start
+        #node_chunk_end = nodes['chunk_end'] # get chunk end
         self.hic_graph.add_nodes_from(node_list.tolist()) # add nodes
         nodes.set_index('node_id', inplace=True)
         node_attr = nodes.to_dict('index') # make node dictionary 

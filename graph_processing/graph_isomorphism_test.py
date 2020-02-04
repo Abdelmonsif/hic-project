@@ -14,7 +14,7 @@ def get_args():
                         help='directory of original hi-c graph')  
 
     parser.add_argument('-data_new',
-                        default='../../test_data/G_snps_23.gexf',
+                        default='../../test_data/test_new.gexf',
                         required=False,
                         help='directory of new hi-c graph')  
  
