@@ -12,12 +12,14 @@ def get_args():
     parser = argparse.ArgumentParser('python')
 
     parser.add_argument('-edge_dir',
-                        default='../../test_data/G_snps_23_edge.h5',
+                        #default='../../test_data/G_snps_23_edge.h5',
+                        default='../../test_data/test.h5',
                         required=False,
                         help='directory of output edge file.')  
 
     parser.add_argument('-node_dir',
-                        default='../../test_data/G_snps_23_node.csv',
+                        #default='../../test_data/G_snps_23_node.csv',
+                        default='../../test_data/test.csv',
                         required=False,
                         help='directory of output edge file.')  
                  
@@ -34,7 +36,7 @@ class HicGraph:
         
         self.hic_graph = nx.Graph() # create empty graph
         node_list = nodes['node_id'] # get node list
-        node_chromosome = nodes['chromosome'] # get chromosome
+        node_chromosome = nodes['chr'] # get chromosome
         node_chunk_start = nodes['chunk_start'] # get chunk start
         node_chunk_end = nodes['chunk_end'] # get chunk end
         self.hic_graph.add_nodes_from(node_list.tolist()) # add nodes
@@ -45,7 +47,7 @@ class HicGraph:
         edge_list = list(map(tuple, edge_list))
         self.hic_graph.add_edges_from(edge_list) # add edges
         edge_attr = pd.DataFrame() # dataframe for edges
-        edge_attr['contacCount'] = contactCount
+        edge_attr['contactCount'] = contactCount
         edge_attr['p-value'] = p_values
         edge_attr['q-value'] = q_values
         edge_attr['id'] = edge_ids 
@@ -54,7 +56,7 @@ class HicGraph:
         edge_attr = edge_attr.to_dict('index') # convert to dictionary 
         nx.set_edge_attributes(self.hic_graph, edge_attr)
 
-        nx.write_gexf(self.hic_graph, "./test.gexf")
+        nx.write_gexf(self.hic_graph, "./test_new.gexf")
 
     def __load_edge(self, edge_dir):
         """

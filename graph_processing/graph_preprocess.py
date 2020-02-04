@@ -13,17 +13,20 @@ def get_args():
     parser = argparse.ArgumentParser('python')
 
     parser.add_argument('-data_dir',
-                        default='../../test_data/G_snps_23.gexf',
+                        #default='../../test_data/G_snps_23.gexf',
+                        default='../../test_data/test.gexf',
                         required=False,
                         help='directory of original hi-c graph')  
 
     parser.add_argument('-edge_dir',
-                        default='../../test_data/G_snps_23_edge.h5',
+                        #default='../../test_data/G_snps_23_edge.h5',
+                        default='../../test_data/test.h5',
                         required=False,
                         help='directory of output edge file.')  
 
     parser.add_argument('-node_dir',
-                        default='../../test_data/G_snps_23_node.csv',
+                        #default='../../test_data/G_snps_23_node.csv',
+                        default='../../test_data/test.csv',
                         required=False,
                         help='directory of output edge file.')  
 
@@ -111,7 +114,7 @@ class HicGraph:
         """
         start = time.time()
         index = range(self.num_nodes)
-        columns = ['node_id', 'chromosome', 'chunk_start', 'chunk_end']
+        columns = ['node_id', 'chr', 'chunk_start', 'chunk_end']
         df = pd.DataFrame(index=index, columns=columns)
         node_list = list(self.hic_graph.nodes)
         i = 0
@@ -121,7 +124,7 @@ class HicGraph:
             df.iloc[i] = [int(node), node_attr['chr'], node_attr['chunk_start'], node_attr['chunk_end']]
             i += 1
         
-        df.sort_values(by=['chromosome', 'chunk_start'], inplace=True) # sort according to chromosome, then chunk start
+        df.sort_values(by=['chr', 'chunk_start'], inplace=True) # sort according to chromosome, then chunk start
         df.reset_index(drop=True, inplace=True) # reset the sorted index
         df.to_csv(out_dir, index=False) # save to csv file
         time_elapsed = time.time()-start 
