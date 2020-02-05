@@ -35,3 +35,6 @@ if __name__=="__main__":
     print('matching topology with node attributes...')
     nm = iso.categorical_node_match('chunk_start', None) # set default value to None
     print(nx.is_isomorphic(graph_old, graph_new, node_match=nm))
+
+
+    

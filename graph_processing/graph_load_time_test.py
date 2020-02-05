@@ -5,3 +5,5 @@ Test the loading time for 2 forms of storage:
 """
 import time
 import networkx as nx
+
+

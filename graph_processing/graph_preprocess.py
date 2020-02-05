@@ -128,7 +128,9 @@ class HicGraph:
             df.iloc[i] = [int(node), node_attr['chr'], node_attr['chunk_start'], node_attr['chunk_end']]
             i += 1
         
-        df.sort_values(by=['chr', 'chunk_start'], inplace=True) # sort according to chromosome, then chunk start
+        #df.sort_values(by=['chr', 'chunk_start'], inplace=True) # sort according to chromosome, then chunk start
+        df = df.sort_values(by=['chr', 'chunk_start'], inplace=False)
+
         df.reset_index(drop=True, inplace=True) # reset the sorted index
         df.to_csv(out_dir, index=False) # save to csv file
         time_elapsed = time.time()-start 
@@ -144,4 +146,5 @@ if __name__ == "__main__":
     hic_graph = HicGraph(data_dir)
     hic_graph.report()
     hic_graph.export_graph(edge_dir, node_dir)
+    
 

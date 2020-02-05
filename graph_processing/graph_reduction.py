@@ -92,3 +92,6 @@ if __name__ == "__main__":
     edge_dir = args.edge_dir
     node_dir = args.node_dir
     hic_graph = HicGraph(edge_dir, node_dir)
+
+
+
