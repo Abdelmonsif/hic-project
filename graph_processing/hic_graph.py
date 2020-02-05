@@ -5,11 +5,14 @@ import h5py
 import numpy as np
 import networkx as nx
 import pandas as pd
+from os import listdir
+from os.path import isfile, join
 
 class HicGraph:
-    def __init__(self, edge_dir, node_dir):
+    def __init__(self, edge_dir, node_dir, snps_dir):
         self.edge_dir = edge_dir
         self.node_dir = node_dir
+        self.snps_dir = snps_dir
 
     def load_graph(self):
         """
@@ -38,7 +41,21 @@ class HicGraph:
         edge_attr = edge_attr.to_dict('index') # convert to dictionary 
         nx.set_edge_attributes(self.hic_graph, edge_attr)
 
-        nx.write_gexf(self.hic_graph, "./test_new.gexf")
+        nx.write_gexf(self.hic_graph, "./test_new.gexf") # for testing graph isomorphism only
+
+    def load_snps(self):
+        """
+        Load SNPs data of the 23 chromosomes into the graph
+        """
+        f_list = [join(self.snps_dir, f) for f in listdir(self.snps_dir) if isfile(join(self.snps_dir, f))] # get the file list
+        f_list = sorted(f_list, key=lambda x: int(x.split('_')[-1])) # sort the list according to suffix
+        assert len(f_list) == 23
+        print(f_list)
+        df_list = [pd.read_csv(snps_file, delim_whitespace=True) for snps_file in f_list] # list of dataframes
+        
+        pandas.set_option('display.max_columns', None)
+        print(df_list[0])
+
 
     def __load_edge(self, edge_dir):
         """
