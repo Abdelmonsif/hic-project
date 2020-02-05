@@ -1,1 +1,1 @@
-# hic-project
+# The Hi-c project
