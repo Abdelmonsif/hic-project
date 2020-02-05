@@ -8,17 +8,19 @@ import pandas as pd
 
 class HicGraph:
     def __init__(self, edge_dir, node_dir):
+        self.edge_dir = edge_dir
+        self.node_dir = node_dir
+
+    def load_graph(self):
         """
-        Load the graph for reduction with NetworkX
+        Load the graph. All edge attributes and each node's chromosome, chunk_start and chun_end are loaded.
         """
-        edge_list, contactCount, p_values, q_values, edge_ids = self.__load_edge(edge_dir)
-        nodes = self.__load_node(node_dir)
+        edge_list, contactCount, p_values, q_values, edge_ids = self.__load_edge(self.edge_dir)
+        nodes = self.__load_node(self.node_dir)
         
         self.hic_graph = nx.Graph() # create empty graph
         node_list = nodes['node_id'] # get node list
-        #node_chromosome = nodes['chr'] # get chromosome
-        #node_chunk_start = nodes['chunk_start'] # get chunk start
-        #node_chunk_end = nodes['chunk_end'] # get chunk end
+
         self.hic_graph.add_nodes_from(node_list.tolist()) # add nodes
         nodes.set_index('node_id', inplace=True)
         node_attr = nodes.to_dict('index') # make node dictionary 
