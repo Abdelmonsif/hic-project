@@ -13,6 +13,7 @@ class HicGraph:
         self.edge_dir = edge_dir
         self.node_dir = node_dir
         self.snps_dir = snps_dir
+        self.write_gexf_dir = "./test_new.gexf"
 
     def load_graph(self):
         """
@@ -41,7 +42,12 @@ class HicGraph:
         edge_attr = edge_attr.to_dict('index') # convert to dictionary 
         nx.set_edge_attributes(self.hic_graph, edge_attr)
 
-        nx.write_gexf(self.hic_graph, "./test_new.gexf") # for testing graph isomorphism only
+    def export_to_gexf(self):
+        """
+        Write the loaded graph to gexf file. Need to call load_graph(self) first
+        """
+        nx.write_gexf(self.hic_graph, self.write_gexf_dir) # for testing graph isomorphism only
+
 
     def load_snps(self):
         """

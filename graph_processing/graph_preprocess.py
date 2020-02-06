@@ -125,13 +125,13 @@ class HicGraph:
         for node in node_list:
             node_attr = self.hic_graph.nodes[node]
             assert(node_attr['label']==node) # node id and node label should be the same
-            df.iloc[i] = [int(node), node_attr['chr'], node_attr['chunk_start'], node_attr['chunk_end']]
+            df.iloc[i] = [int(node), int(node_attr['chr']), int(node_attr['chunk_start']), int(node_attr['chunk_end'])]
             i += 1
         
         #df.sort_values(by=['chr', 'chunk_start'], inplace=True) # sort according to chromosome, then chunk start
-        df = df.sort_values(by=['chr', 'chunk_start'], inplace=False)
+        df = df.sort_values(by=['chr', 'chunk_start'], inplace=False) # sort according to chromosome, then chunk start
 
-        df.reset_index(drop=True, inplace=True) # reset the sorted index
+        #df.reset_index(drop=True, inplace=True) # reset the sorted index
         df.to_csv(out_dir, index=False) # save to csv file
         time_elapsed = time.time()-start 
         print('time elapsed for exporting nodes: ', time_elapsed)
