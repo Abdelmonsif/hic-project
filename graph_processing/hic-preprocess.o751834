@@ -1,0 +1,48 @@
+--------------------------------------
+Running PBS prologue script
+--------------------------------------
+User and Job Data:
+--------------------------------------
+Job ID:    751834.qb3
+Username:  wshi6
+Group:     loniusers
+Date:      04-Feb-2020 16:42
+Node:      qb504 (69492)
+--------------------------------------
+PBS has allocated the following nodes:
+
+qb504
+
+A total of 48 processors on 1 nodes allocated
+---------------------------------------------
+Check nodes and clean them of stray processes
+---------------------------------------------
+Checking node qb504 16:42:06 
+Done clearing all the allocated nodes
+------------------------------------------------------
+Concluding PBS prologue script - 04-Feb-2020 16:42:06
+------------------------------------------------------
+------------------------------------------------------
+Running PBS epilogue script    - 06-Feb-2020 15:12:37
+------------------------------------------------------
+Checking node qb504 (MS)
+-> Killing process of wshi6: [python]
+Checking node qb504 ok
+-> Killing process of wshi6: [python]
+------------------------------------------------------
+Concluding PBS epilogue script - 06-Feb-2020 15:12:39
+------------------------------------------------------
+Exit Status:     271
+Job ID:          751834.qb3
+Username:        wshi6
+Group:           loniusers
+Job Name:        hic-preprocess
+Session Id:      69491
+Resource Limits: ncpus=1,neednodes=1:ppn=48,nodes=1:ppn=48,walltime=72:00:00
+Resources Used:  cput=46:30:57,mem=541102892kb,vmem=541903372kb,walltime=46:30:32
+Queue Used:      bigmem
+Account String:  loni_omics01
+Node:            qb504
+Process id:      92648
+Last status:     06-Feb-2020:15:05 PBS_job=751834.qb3 user=wshi6 allocation=loni_omics01 queue=bigmem total_load=1.05 cpu_hours=45.41 wall_hours=45.40 unused_nodes=0 total_nodes=1 ppn=48 avg_load=1.05 avg_cpu=96% avg_mem=488452mb avg_vmem=492765mb top_proc=wshi6:python:qb504:481G:477G:45.4hr:96% toppm=wshi6:python:qb504:528980M:528489M node_processes=3 avg_avail_mem=1043444mb min_avail_mem=1043444mb reverified_avg_load=1.01
+------------------------------------------------------

@@ -13,7 +13,7 @@ class HicGraph:
         self.edge_dir = edge_dir
         self.node_dir = node_dir
         self.snps_dir = snps_dir
-        self.write_gexf_dir = "./test_new.gexf"
+        self.write_gexf_dir = "../../test_data/test_new.gexf"
 
     def load_graph(self):
         """

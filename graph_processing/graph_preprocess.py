@@ -35,8 +35,8 @@ class HicGraph:
         start=time.time()
         print('reading original gexf...')
         self.hic_graph = nx.read_gexf(data_dir) 
-        time_elapsed = time.time()-start 
-        print('time elapsed for reading original gexf: ', time_elapsed)        
+        print('time elapsed for reading original gexf: ')
+        self.__report_elapsed_time(start)        
         
         self.num_nodes = nx.number_of_nodes(self.hic_graph)
         self.num_edges = len(list(self.hic_graph.edges))
@@ -103,9 +103,9 @@ class HicGraph:
         edge_grp.create_dataset('p_values', data=p_value_array, dtype='f')
         edge_grp.create_dataset('q_values', data=q_value_array, dtype='f')
         edge_grp.create_dataset('edge_ids', data=edge_id_array, dtype='i')
-
-        time_elapsed = time.time()-start 
-        print('time elapsed for exporting edges: ', time_elapsed)
+ 
+        print('time elapsed for exporting edges: ')
+        self.__report_elapsed_time(start)
 
     def __export_node_list(self, out_dir):
         """
@@ -115,7 +115,7 @@ class HicGraph:
             3. chunk-start (start position of the chunk represented by this node, integer).
             4. chunk-end (end position of the chunk represented by this node, integer).
         """
-        print('exporting nodes to csv...')
+        print('forming nodes dataframe...')
         start = time.time()
         index = range(self.num_nodes)
         columns = ['node_id', 'chr', 'chunk_start', 'chunk_end']
@@ -127,14 +127,31 @@ class HicGraph:
             assert(node_attr['label']==node) # node id and node label should be the same
             df.iloc[i] = [int(node), int(node_attr['chr']), int(node_attr['chunk_start']), int(node_attr['chunk_end'])]
             i += 1
-        
+        print('time elapsed for forming nodes dataframe:')
+        self.__report_elapsed_time(start)
+
+
+        print('sorting the dataframe...')
+        start = time.time()
         #df.sort_values(by=['chr', 'chunk_start'], inplace=True) # sort according to chromosome, then chunk start
         df = df.sort_values(by=['chr', 'chunk_start'], inplace=False) # sort according to chromosome, then chunk start
+        print('time elapsed for sorting:')
+        self.__report_elapsed_time(start)
 
+        print('saving the dataframe to disk...')
         #df.reset_index(drop=True, inplace=True) # reset the sorted index
         df.to_csv(out_dir, index=False) # save to csv file
-        time_elapsed = time.time()-start 
-        print('time elapsed for exporting nodes: ', time_elapsed)
+        print('time elapsed for exporting nodes:')
+        self.__report_elapsed_time(start)
+
+    def __report_elapsed_time(self, start):
+        end = time.time()   
+        time_elapsed = end - start
+        hour = time_elapsed//3600
+        time_elapsed = time_elapsed - hour * 3600
+        minute = time_elapsed//60
+        time_elapsed = time_elapsed - minute * 60
+        print('{}:{}:{}'.format(int(hour), int(minute), round(time_elapsed)))
 
 
 if __name__ == "__main__":
