@@ -7,6 +7,7 @@ import networkx as nx
 import pandas as pd
 from os import listdir
 from os.path import isfile, join
+import time
 
 class HicGraph:
     def __init__(self, edge_dir, node_dir, snps_dir):
@@ -19,6 +20,8 @@ class HicGraph:
         """
         Load the graph. All edge attributes and each node's chromosome, chunk_start and chun_end are loaded.
         """
+        print('loading the main graph...')
+        start=time.time()
         edge_list, contactCount, p_values, q_values, edge_ids = self.__load_edge(self.edge_dir)
         nodes = self.__load_node(self.node_dir)
         
@@ -41,6 +44,18 @@ class HicGraph:
         edge_attr.set_index('edge_list', inplace=True) # set edge list as index
         edge_attr = edge_attr.to_dict('index') # convert to dictionary 
         nx.set_edge_attributes(self.hic_graph, edge_attr)
+        print('loading finished. Time for loading the graph:')
+        self.__report_elapsed_time(start)
+
+    def __report_elapsed_time(self, start):
+        end = time.time()   
+        time_elapsed = end - start
+        hour = time_elapsed//3600
+        time_elapsed = time_elapsed - hour * 3600
+        minute = time_elapsed//60
+        time_elapsed = time_elapsed - minute * 60
+        print('{}:{}:{}'.format(int(hour), int(minute), round(time_elapsed)))
+
 
     def export_to_gexf(self):
         """
@@ -78,7 +93,7 @@ class HicGraph:
 
     def __load_node(self, node_dir):
         """
-        Load nodes from the 
+        Load nodes from the csv file produced by graph_preprocess.py
         """
         nodes = pd.read_csv(node_dir)
         return nodes
