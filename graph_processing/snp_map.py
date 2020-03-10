@@ -34,7 +34,7 @@ def load_snps(snps_dir):
     
     snp_map = {}
     for i in range(len(f_list)):
-        print('extrating info from chromosome {}...'.format(i))
+        print('extrating info from chromosome {}...'.format(i+1))
         df_chr = pd.read_csv(f_list[i], delim_whitespace=True)
         snp_map.update(extract_map_from_df(df_chr))
     return snp_map
@@ -49,7 +49,6 @@ def extract_map_from_df(df):
     df_new['Nodes'] = df['Nodes']
     df_new['Interactor'] = df['Interactor'].apply(lambda x: [int(e) for e in x.split('-')])
     df_new['SNPs_ID'] = df['SNPs_ID'].apply(lambda x: x.split('__') if type(x)==str else 'nan')
-    
     snp_map = {} # dictionary to store the location of the SNPs
     for index, row in df_new.iterrows():
         Interactor = row['Interactor']
