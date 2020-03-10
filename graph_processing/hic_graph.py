@@ -47,6 +47,7 @@ class HicGraph:
         print('loading finished. Time for loading the graph:')
         self.__report_elapsed_time(start)
 
+
     def __report_elapsed_time(self, start):
         end = time.time()   
         time_elapsed = end - start
@@ -55,27 +56,6 @@ class HicGraph:
         minute = time_elapsed//60
         time_elapsed = time_elapsed - minute * 60
         print('{}:{}:{}'.format(int(hour), int(minute), round(time_elapsed)))
-
-
-    def export_to_gexf(self):
-        """
-        Write the loaded graph to gexf file. Need to call load_graph(self) first
-        """
-        nx.write_gexf(self.hic_graph, self.write_gexf_dir) # for testing graph isomorphism only
-
-
-    def load_snps(self):
-        """
-        Load SNPs data of the 23 chromosomes into the graph
-        """
-        f_list = [join(self.snps_dir, f) for f in listdir(self.snps_dir) if isfile(join(self.snps_dir, f))] # get the file list
-        f_list = sorted(f_list, key=lambda x: int(x.split('_')[-1])) # sort the list according to suffix
-        assert len(f_list) == 23
-        print(f_list)
-        df_list = [pd.read_csv(snps_file, delim_whitespace=True) for snps_file in f_list] # list of dataframes
-        
-        pandas.set_option('display.max_columns', None)
-        print(df_list[0])
 
 
     def __load_edge(self, edge_dir):
@@ -97,6 +77,20 @@ class HicGraph:
         """
         nodes = pd.read_csv(node_dir)
         return nodes
+
+
+    def load_snp_map(self, snp_map_dir):
+        """
+        Load the json file containing the SNP mapping.
+        """
+
+
+    def export_to_gexf(self):
+        """
+        Write the loaded graph to gexf file. Need to call load_graph(self) first
+        """
+        nx.write_gexf(self.hic_graph, self.write_gexf_dir) # for testing graph isomorphism only
+
 
     def report(self):
         """
