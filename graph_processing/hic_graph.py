@@ -101,8 +101,17 @@ class HicGraph:
         snp_cols_2 = patient_snp.columns[(patient_snp == 2).iloc[0]].tolist()
         self.snp_cols.extend(snp_cols_1)
         self.snp_cols.extend(snp_cols_2)
-        # find the locations of the snps
-        # new column to indicate existence of SNPs
+        snp_location = [] # find the locations of the snps
+        missing_snp = []
+        for snp in self.snp_cols:
+            try:
+                snp_location.append(self.snp_map[snp])
+                #print(self.snp_map[snp])
+            except:
+                missing_snp.append(snp)
+        print(len(missing_snp))
+        print(len(self.snp_cols))
+        # new column of node dataframe to indicate existence of SNPs
         # 1 if there is SNP, 0 if no SNP
 
 
