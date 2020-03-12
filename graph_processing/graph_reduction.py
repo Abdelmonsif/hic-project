@@ -20,7 +20,7 @@ def get_args():
                         help='directory of output edge file.')  
 
     parser.add_argument('-snps_dir',
-                        default='../../final_results_5kb_to_Dl/snps_splitted_chr_final/',
+                        default='../../snp_map/snp_map.json',
                         required=False,
                         help='directory of output edge file.') 
                  
@@ -34,7 +34,7 @@ if __name__ == "__main__":
     snps_dir = args.snps_dir
     hic_graph = HicGraph(edge_dir, node_dir, snps_dir)
     hic_graph.load_graph()
-    hic_graph.load_snps()
+    print(hic_graph.snp_map)
 
 
 

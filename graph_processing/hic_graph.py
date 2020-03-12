@@ -8,6 +8,7 @@ import pandas as pd
 from os import listdir
 from os.path import isfile, join
 import time
+import json
 
 class HicGraph:
     def __init__(self, edge_dir, node_dir, snps_dir):
@@ -22,6 +23,9 @@ class HicGraph:
         """
         print('loading the main graph...')
         start=time.time()
+
+        self.__load_snp_map() # load SNP map
+
         edge_list, contactCount, p_values, q_values, edge_ids = self.__load_edge(self.edge_dir)
         nodes = self.__load_node(self.node_dir)
         
@@ -79,10 +83,12 @@ class HicGraph:
         return nodes
 
 
-    def load_snp_map(self, snp_map_dir):
+    def __load_snp_map(self):
         """
         Load the json file containing the SNP mapping.
         """
+        with open(self.snps_dir) as f:
+            self.snp_map = json.load(f)
 
 
     def export_to_gexf(self):
