@@ -1,6 +1,7 @@
 """
 Reduce the size of the graph by contracting edges.
 """
+import pandas as pd
 import argparse
 from hic_graph import HicGraph
 
@@ -22,19 +23,27 @@ def get_args():
     parser.add_argument('-snps_dir',
                         default='../../snp_map/snp_map.json',
                         required=False,
-                        help='directory of output edge file.') 
+                        help='location of the snp mapping file.') 
+
+    parser.add_argument('-patient_dir',
+                        default='../../patient/BCAC-97446542.csv',
+                        required=False,
+                        help='location of the patient file.') 
                  
     return parser.parse_args()
 
 
 if __name__ == "__main__":
+    pd.set_option("display.max_columns", 5)
+
     args = get_args()
     edge_dir = args.edge_dir
     node_dir = args.node_dir
     snps_dir = args.snps_dir
+    patient_dir = args.patient_dir
     hic_graph = HicGraph(edge_dir, node_dir, snps_dir)
     hic_graph.load_graph()
-    print(hic_graph.snp_map)
+    hic_graph.load_patient(patient_dir)
 
 
 

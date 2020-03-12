@@ -19,7 +19,7 @@ class HicGraph:
 
     def load_graph(self):
         """
-        Load the graph. All edge attributes and each node's chromosome, chunk_start and chun_end are loaded.
+        Load the original main graph. All edge attributes and each node's chromosome, chunk_start and chun_end are loaded.
         """
         print('loading the main graph...')
         start=time.time()
@@ -89,6 +89,22 @@ class HicGraph:
         """
         with open(self.snps_dir) as f:
             self.snp_map = json.load(f)
+
+
+    def load_patient(self, patient_dir):
+        """
+        Load the csv file containing SNPs of a patient
+        """
+        patient_snp = pd.read_csv(patient_dir, sep='	') # load patient SNPs as a dataframe
+        self.snp_cols = [] # list containing all the SNPs of the patient
+        snp_cols_1 = patient_snp.columns[(patient_snp == 1).iloc[0]].tolist()
+        snp_cols_2 = patient_snp.columns[(patient_snp == 2).iloc[0]].tolist()
+        self.snp_cols.extend(snp_cols_1)
+        self.snp_cols.extend(snp_cols_2)
+        # find the locations of the snps
+        # new column to indicate existence of SNPs
+        # 1 if there is SNP, 0 if no SNP
+
 
 
     def export_to_gexf(self):
