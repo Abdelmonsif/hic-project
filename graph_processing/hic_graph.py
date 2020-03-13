@@ -93,7 +93,8 @@ class HicGraph:
 
     def load_patient(self, patient_dir):
         """
-        Load the csv file containing SNPs of a patient
+        Load the csv file containing SNPs of a patient, then add the locations of 
+        SNPs to the nodes dataframe.
         """
         patient_snp = pd.read_csv(patient_dir, sep='	') # load patient SNPs as a dataframe
         self.snp_cols = [] # list containing all the SNPs of the patient
@@ -101,19 +102,17 @@ class HicGraph:
         snp_cols_2 = patient_snp.columns[(patient_snp == 2).iloc[0]].tolist()
         self.snp_cols.extend(snp_cols_1)
         self.snp_cols.extend(snp_cols_2)
-        snp_location = [] # find the locations of the snps
-        missing_snp = []
+        snp_location = [] # find the locations (node ids) of the snps
+        num_missing_snp = 0 # number of missing snp for this patient, ignore them
         for snp in self.snp_cols:
             try:
-                snp_location.append(self.snp_map[snp])
+                snp_location.append(self.snp_map[snp][-1]) # last element is node id
                 #print(self.snp_map[snp])
             except:
-                missing_snp.append(snp)
-        print(len(missing_snp))
-        print(len(self.snp_cols))
+                num_missing_snp += 1
+        snp_location = list(set(snp_location)) # there are multiple SNPs on a single node, so take the set of this list to remove duplicates
         # new column of node dataframe to indicate existence of SNPs
         # 1 if there is SNP, 0 if no SNP
-
 
 
     def export_to_gexf(self):
