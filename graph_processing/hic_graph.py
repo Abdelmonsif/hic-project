@@ -27,15 +27,18 @@ class HicGraph:
         self.__load_snp_map() # load SNP map
 
         edge_list, contactCount, p_values, q_values, edge_ids = self.__load_edge(self.edge_dir)
-        nodes = self.__load_node(self.node_dir)
+        self.nodes = self.__load_node(self.node_dir)
         
         self.hic_graph = nx.Graph() # create empty graph
-        node_list = nodes['node_id'] # get node list
+        node_list = self.nodes['node_id'] # get node list
 
         self.hic_graph.add_nodes_from(node_list.tolist()) # add nodes
-        nodes.set_index('node_id', inplace=True)
-        node_attr = nodes.to_dict('index') # make node dictionary 
+        self.nodes.set_index('node_id', inplace=True)
+        node_attr = self.nodes.to_dict('index') # make node dictionary 
         nx.set_node_attributes(self.hic_graph, node_attr) # add node dictionary as node attributes
+        
+        self.nodes['has_snp'] = False # add a column to indicate presence of SNPs
+        self.__generate_node_id_set() # generate set of node ids 
         
         edge_list = list(map(tuple, edge_list))
         self.hic_graph.add_edges_from(edge_list) # add edges
@@ -75,6 +78,7 @@ class HicGraph:
         edge_ids = f['edge/edge_ids']
         return edge_list[()], contactCount[()], p_values[()], q_values[()], edge_ids[()] # convert to numpy array
 
+
     def __load_node(self, node_dir):
         """
         Load nodes from the csv file produced by graph_preprocess.py
@@ -91,6 +95,14 @@ class HicGraph:
             self.snp_map = json.load(f)
 
 
+    def __generate_node_id_set(self):
+        """
+        Generate a set of node ids. It is used to intersect with the set of node ids with SNPs.
+        Might be deprecated in the future when using the whole main graph.
+        """
+        self.node_id_set = set(self.nodes.index.values.tolist()) # set of list of node ids
+
+
     def load_patient(self, patient_dir):
         """
         Load the csv file containing SNPs of a patient, then add the locations of 
@@ -102,18 +114,18 @@ class HicGraph:
         snp_cols_2 = patient_snp.columns[(patient_snp == 2).iloc[0]].tolist()
         self.snp_cols.extend(snp_cols_1)
         self.snp_cols.extend(snp_cols_2)
-        snp_location = [] # find the locations (node ids) of the snps
+        snp_locations = [] # find the locations (node ids) of the snps
         num_missing_snp = 0 # number of missing snp for this patient, ignore them
         for snp in self.snp_cols:
             try:
-                snp_location.append(self.snp_map[snp][-1]) # last element is node id
+                snp_locations.append(self.snp_map[snp][-1]) # last element is node id
                 #print(self.snp_map[snp])
             except:
                 num_missing_snp += 1
-        snp_location = list(set(snp_location)) # there are multiple SNPs on a single node, so take the set of this list to remove duplicates
-        # new column of node dataframe to indicate existence of SNPs
-        # 1 if there is SNP, 0 if no SNP
-
+        snp_locations = set(snp_locations) # there are multiple SNPs on a single node, so take the set of this list to remove duplicates
+        snp_locations = list(snp_locations.intersection(self.node_id_set)) # this step may be redundant when using main graph as input
+        self.nodes.loc[snp_locations, 'has_snp'] = True # True if there is SNP, False if no SNP
+        print(self.nodes)
 
     def export_to_gexf(self):
         """
