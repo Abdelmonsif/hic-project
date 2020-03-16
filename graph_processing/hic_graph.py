@@ -153,8 +153,31 @@ class HicGraph:
         for chr in range(1,24): # for each chromosome
             df_chr = self.nodes[self.nodes['chr'] == chr]
             print(df_chr)
-            # row index of SNP nodes
-        
+            snp_rows = np.where(df_chr.has_snp==True)[0] # row number of SNP nodes
+            print('snp rows:', snp_rows)
+            num_rows = df_chr.shape[0]
+            rows = list(range(num_rows))
+            print('rows:', rows)
+            if len(snp_rows) > 0:
+                start = 0
+                for snp_node in snp_rows: # generate lists of merged nodes
+                    end = snp_node
+                    if end > start: # avoid empty list when first node is SNP-node
+                        to_merge = rows[start:end] # get nodes whose row_numbers are smaller than snp_node 
+                        print(to_merge)
+                    start = snp_node + 1
+                    # get the list of node ids
+                    #nodes_to_merge.append() 
+                
+                end = num_rows # last segment
+                if end > start:
+                    to_merge = rows[start:end] # get nodes whose row_numbers are smaller than snp_node 
+                    print(to_merge)
+            
+            elif len(snp_rows) == 0: # all nodes of this chromosome are non-SNP
+                to_merge = rows
+                print(to_merge)
+                    
 
     def graph_reduce_2(self):
         """
