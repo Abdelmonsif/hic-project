@@ -127,7 +127,8 @@ class HicGraph:
         self.nodes.loc[snp_locations, 'has_snp'] = True # True if there is SNP, False if no SNP
         print(self.nodes)
 
-    def export_to_gexf(self):
+
+    def export_original_graph(self):
         """
         Write the loaded graph to gexf file. Need to call load_graph(self) first
         """
@@ -141,3 +142,25 @@ class HicGraph:
         print('number of nodes in the graph:', nx.number_of_nodes(self.hic_graph))
         print('attribute names of each node:', self.node_attribute_list)
         print('attribute names of each edge:', self.edge_attribute_list)
+
+    
+    def graph_reduce_1(self):
+        """
+        Merge the nodes without SNP to nodes with SNP. The result graph will be a new NetworkX graph object.
+        All non-SNP nodes are merged together.
+        """
+        nodes_to_merge = [] # list of lists of nodes to merge
+        for chr in range(1,24): # for each chromosome
+            df_chr = self.nodes[self.nodes['chr'] == chr]
+            print(df_chr)
+            # row index of SNP nodes
+        
+
+    def graph_reduce_2(self):
+        """
+        Merge the non-SNP nodes to nearest SNP nodes according to the distances.
+        """
+        return None
+
+    
+
