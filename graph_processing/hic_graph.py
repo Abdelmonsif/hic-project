@@ -156,9 +156,6 @@ class HicGraph:
             snp_rows = np.where(df_chr.has_snp==True)[0] # row number of SNP nodes
             num_rows = df_chr.shape[0]
             rows = list(range(num_rows))
-            #print(df_chr)
-            #print('snp rows:', snp_rows)
-            #print('rows:', rows)
 
             if len(snp_rows) > 0:
                 start = 0
@@ -173,16 +170,27 @@ class HicGraph:
             elif len(snp_rows) == 0: # all nodes of this chromosome are non-SNP
                 rows_to_merge.append(rows)
             
+            print(df_chr)
+            #print('snp rows:', snp_rows)
+            #print('rows:', rows)
             print(rows_to_merge) 
-            # get the node ids of the nodes to merge into one node on this chromosome
-
-                    
+            
+            node_ids = list(df_chr.index)
+            node_ids_to_merge = [list(map(node_ids.__getitem__, rows))  for rows in rows_to_merge] # get the node ids of the nodes to merge into one node on this chromosome
+            print(node_ids_to_merge)
+        
 
     def graph_reduce_2(self):
         """
         Merge the non-SNP nodes to nearest SNP nodes according to the distances.
         """
         return None
+
+
+    def __merge_nodes(self, node_ids_to_merge):
+        """
+        Used by methods graph_reduce_1 and graph_reduce_2 to merge the specified nodes (non-SNP) into one node.
+        """
 
     
 
