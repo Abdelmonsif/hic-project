@@ -149,34 +149,33 @@ class HicGraph:
         Merge the nodes without SNP to nodes with SNP. The result graph will be a new NetworkX graph object.
         All non-SNP nodes are merged together.
         """
-        nodes_to_merge = [] # list of lists of nodes to merge
+        
         for chr in range(1,24): # for each chromosome
+            rows_to_merge = [] # list of lists of rows in 23 chr dataframes to merge
             df_chr = self.nodes[self.nodes['chr'] == chr]
-            print(df_chr)
             snp_rows = np.where(df_chr.has_snp==True)[0] # row number of SNP nodes
-            print('snp rows:', snp_rows)
             num_rows = df_chr.shape[0]
             rows = list(range(num_rows))
-            print('rows:', rows)
+            #print(df_chr)
+            #print('snp rows:', snp_rows)
+            #print('rows:', rows)
+
             if len(snp_rows) > 0:
                 start = 0
                 for snp_node in snp_rows: # generate lists of merged nodes
                     end = snp_node
-                    if end > start: # avoid empty list when first node is SNP-node
-                        to_merge = rows[start:end] # get nodes whose row_numbers are smaller than snp_node 
-                        print(to_merge)
-                    start = snp_node + 1
-                    # get the list of node ids
-                    #nodes_to_merge.append() 
-                
+                    if end > start: # avoid empty list when first node is SNP-node or consecutive SNP-nodes
+                        rows_to_merge.append(rows[start:end]) # get nodes whose row_numbers are smaller than snp_node 
+                    start = snp_node + 1 # next segment
                 end = num_rows # last segment
-                if end > start:
-                    to_merge = rows[start:end] # get nodes whose row_numbers are smaller than snp_node 
-                    print(to_merge)
-            
+                if end > start: # only do so when last node is not a SNP-node
+                    rows_to_merge.append(rows[start:end]) # get nodes whose row_numbers are smaller than snp_node 
             elif len(snp_rows) == 0: # all nodes of this chromosome are non-SNP
-                to_merge = rows
-                print(to_merge)
+                rows_to_merge.append(rows)
+            
+            print(rows_to_merge) 
+            # get the node ids of the nodes to merge into one node on this chromosome
+
                     
 
     def graph_reduce_2(self):
