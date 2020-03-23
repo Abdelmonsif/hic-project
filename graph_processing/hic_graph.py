@@ -39,8 +39,18 @@ class HicGraph:
         # Might be deprecated in the future when using the whole main graph.
         self.node_id_set = set(self.nodes.index.values.tolist())
         
-        self.edge_list = list(map(tuple, self.edge_list))
-        
+        self.edge_list = list(map(tuple, self.edge_list)) # edge list 
+
+        self.edge_table = pd.DataFrame() # edge table       
+        self.edge_table['id'] = self.edge_ids  
+        self.edge_table['source'] = [x[0] for x in self.edge_list]
+        self.edge_table['target'] = [x[1] for x in self.edge_list]
+        self.edge_table['contactCount'] = self.contactCount
+        self.edge_table['p-value'] = self.p_values
+        self.edge_table['q-value'] = self.q_values
+        #self.edge_table['edge_list'] = self.edge_list
+
+
         print('loading finished. Time for loading the graph:')
         self.__report_elapsed_time(start)
 
@@ -195,6 +205,7 @@ class HicGraph:
         """
         print(self.nodes)
         print(self.edge_list)
+        print(self.edge_table)
         reduced_graph = nx.Graph()
         # nodes
         # neighbors
