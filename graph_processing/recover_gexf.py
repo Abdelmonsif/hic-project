@@ -22,6 +22,11 @@ def get_args():
                         required=False,
                         help='directory of output edge file.')  
                  
+    parser.add_argument('-snps_dir',
+                        default='../../snp_map/snp_map.json',
+                        required=False,
+                        help='location of the snp mapping file.') 
+
     return parser.parse_args()
 
 
@@ -29,9 +34,10 @@ if __name__ == "__main__":
     args = get_args()
     edge_dir = args.edge_dir
     node_dir = args.node_dir
-    hic_graph = HicGraph(edge_dir, node_dir, None)
+    snps_dir = args.snps_dir
+    hic_graph = HicGraph(edge_dir, node_dir, snps_dir, "../../test_data/test_new.gexf")
     hic_graph.load_graph()
-    hic_graph.export_to_gexf()
+    hic_graph.export_original_graph()
 
 
 
