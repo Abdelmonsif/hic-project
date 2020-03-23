@@ -143,7 +143,7 @@ class HicGraph:
         Merge the nodes without SNP to nodes with SNP. The result graph will be a new NetworkX graph object.
         All non-SNP nodes are merged together.
         """
-        
+        to_merge = []        
         for chr in range(1,24): # for each chromosome
             rows_to_merge = [] # list of lists of rows in 23 chr dataframes to merge
             df_chr = self.nodes[self.nodes['chr'] == chr]
@@ -164,15 +164,14 @@ class HicGraph:
             elif len(snp_rows) == 0: # all nodes of this chromosome are non-SNP
                 rows_to_merge.append(rows)
             
-            print(df_chr)
-            #print('snp rows:', snp_rows)
-            #print('rows:', rows)
-            print(rows_to_merge) 
-            
             node_ids = list(df_chr.index)
             node_ids_to_merge = [list(map(node_ids.__getitem__, rows))  for rows in rows_to_merge] # get the node ids of the nodes to merge into one node on this chromosome
-            print(node_ids_to_merge)
-        
+            to_merge.extend(node_ids_to_merge)
+            print(df_chr)
+            #print(rows_to_merge) 
+            #print(node_ids_to_merge)
+        to_merge = list(filter(None, to_merge)) # remove empty lists
+        print(to_merge)
 
     def graph_reduce_2(self):
         """
@@ -181,7 +180,7 @@ class HicGraph:
         return None
 
 
-    def __merge_nodes(self, node_ids_to_merge):
+    def __merge_nodes(self, to_merge):
         """
         Used by methods graph_reduce_1 and graph_reduce_2 to merge the specified nodes (non-SNP) into one node.
         """

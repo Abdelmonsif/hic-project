@@ -41,7 +41,7 @@ if __name__ == "__main__":
     node_dir = args.node_dir
     snps_dir = args.snps_dir
     patient_dir = args.patient_dir
-    hic_graph = HicGraph(edge_dir, node_dir, snps_dir)
+    hic_graph = HicGraph(edge_dir, node_dir, snps_dir, None)
     hic_graph.load_graph()
     hic_graph.load_patient(patient_dir)
     hic_graph.graph_reduce_1()
