@@ -21,17 +21,18 @@ class HicGraph:
     def load_graph(self):
         """
         Load the original main graph. All edge attributes and each node's chromosome, chunk_start and chun_end are loaded.
+        The graph reduction algorithm is going to work on the 2 loaded data structures: 'nodes' and 'edge_list'
         """
         print('loading the main graph...')
         start=time.time()
 
         self.__load_snp_map() # load SNP map
 
-        self.edge_list, contactCount, p_values, q_values, edge_ids = self.__load_edge(self.edge_dir)
+        self.edge_list, self.contactCount, self.p_values, self.q_values, self.edge_ids = self.__load_edge(self.edge_dir)
+        
         self.nodes = self.__load_node(self.node_dir)
         self.node_list = self.nodes['node_id'] # get node list
         self.nodes.set_index('node_id', inplace=True)
-        self.node_attr = self.nodes.to_dict('index') # make node dictionary 
         self.nodes['has_snp'] = False # add a column to indicate presence of SNPs
         
         # Generate a set of node ids. It is used to intersect with the set of node ids with SNPs.
@@ -39,14 +40,6 @@ class HicGraph:
         self.node_id_set = set(self.nodes.index.values.tolist())
         
         self.edge_list = list(map(tuple, self.edge_list))
-        self.edge_attr = pd.DataFrame() # dataframe for edges
-        self.edge_attr['contactCount'] = contactCount
-        self.edge_attr['p-value'] = p_values
-        self.edge_attr['q-value'] = q_values
-        self.edge_attr['id'] = edge_ids 
-        self.edge_attr['edge_list'] = self.edge_list
-        self.edge_attr.set_index('edge_list', inplace=True) # set edge list as index
-        self.edge_attr = self.edge_attr.to_dict('index') # convert to dictionary 
         
         print('loading finished. Time for loading the graph:')
         self.__report_elapsed_time(start)
@@ -114,28 +107,40 @@ class HicGraph:
         snp_locations = set(snp_locations) # there are multiple SNPs on a single node, so take the set of this list to remove duplicates
         snp_locations = list(snp_locations.intersection(self.node_id_set)) # this step may be redundant when using main graph as input
         self.nodes.loc[snp_locations, 'has_snp'] = True # True if there is SNP, False if no SNP
-        print(self.nodes)
 
 
     def export_original_graph(self):
         """
-        Write the loaded graph to gexf file. Need to call load_graph(self) first
+        Write the loaded graph to gexf file. Need to call load_graph(self) first.
+        The goal of this method is to verify the correctness of loading by graph isomorphism test.
         """
-        self.hic_graph = nx.Graph() # create empty graph
-        self.hic_graph.add_nodes_from(self.node_list.tolist()) # add nodes
-        nx.set_node_attributes(self.hic_graph, self.node_attr) # add node dictionary as node attributes
-        self.hic_graph.add_edges_from(self.edge_list) # add edges
-        nx.set_edge_attributes(self.hic_graph, self.edge_attr)
-        nx.write_gexf(self.hic_graph, self.write_gexf_dir) # for testing graph isomorphism only
+        hic_graph = nx.Graph() # create empty graph
+        hic_graph.add_nodes_from(self.node_list.tolist()) # add nodes
+        node_attr = self.nodes.to_dict('index') # make node dictionary 
+        nx.set_node_attributes(hic_graph, node_attr) # add node dictionary as node attributes
+        
+        edge_attr = pd.DataFrame() # dataframe for edges
+        edge_attr['contactCount'] = self.contactCount
+        edge_attr['p-value'] = self.p_values
+        edge_attr['q-value'] = self.q_values
+        edge_attr['id'] = self.edge_ids 
+        edge_attr['edge_list'] = self.edge_list
+        edge_attr.set_index('edge_list', inplace=True) # set edge list as index
+        edge_attr = edge_attr.to_dict('index') # convert to dictionary 
+        hic_graph.add_edges_from(self.edge_list) # add edges
+        nx.set_edge_attributes(hic_graph, edge_attr)
+        
+        nx.write_gexf(hic_graph, self.write_gexf_dir) # for testing graph isomorphism only
     
 
     def report(self):
         """
         Report info about this graph
         """
-        print('number of nodes in the graph:', nx.number_of_nodes(self.hic_graph))
-        print('attribute names of each node:', self.node_attribute_list)
-        print('attribute names of each edge:', self.edge_attribute_list)
+        #print('number of nodes in the graph:', nx.number_of_nodes(self.hic_graph))
+        #print('attribute names of each node:', self.node_attribute_list)
+        #print('attribute names of each edge:', self.edge_attribute_list)
+        return None
 
     
     def graph_reduce_1(self):
@@ -167,11 +172,15 @@ class HicGraph:
             node_ids = list(df_chr.index)
             node_ids_to_merge = [list(map(node_ids.__getitem__, rows))  for rows in rows_to_merge] # get the node ids of the nodes to merge into one node on this chromosome
             to_merge.extend(node_ids_to_merge)
-            print(df_chr)
+            #print(df_chr)
             #print(rows_to_merge) 
             #print(node_ids_to_merge)
         to_merge = list(filter(None, to_merge)) # remove empty lists
+        print('nodes to merge:')
         print(to_merge)
+        
+        self.__merge_nodes(to_merge)
+
 
     def graph_reduce_2(self):
         """
@@ -184,6 +193,14 @@ class HicGraph:
         """
         Used by methods graph_reduce_1 and graph_reduce_2 to merge the specified nodes (non-SNP) into one node.
         """
+        print(self.nodes)
+        print(self.edge_list)
+        reduced_graph = nx.Graph()
+        # nodes
+        # neighbors
+        # edges
+        # edge attributes
+        
 
     
 
