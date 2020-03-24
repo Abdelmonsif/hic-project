@@ -35,8 +35,8 @@ class HicGraph:
         self.nodes.set_index('node_id', inplace=True)
         self.nodes['has_snp'] = False # add a column to indicate presence of SNPs
         
-        # Generate a set of node ids. It is used to intersect with the set of node ids with SNPs.
-        # Might be deprecated in the future when using the whole main graph.
+        '''Generate a set of node ids. It is used to intersect with the set of node ids with SNPs.
+        Might be deprecated in the future when using the whole main graph.'''
         self.node_id_set = set(self.nodes.index.values.tolist())
         
         self.edge_list = list(map(tuple, self.edge_list)) # edge list 
@@ -49,7 +49,6 @@ class HicGraph:
         self.edge_table['p-value'] = self.p_values
         self.edge_table['q-value'] = self.q_values
         #self.edge_table['edge_list'] = self.edge_list
-
 
         print('loading finished. Time for loading the graph:')
         self.__report_elapsed_time(start)
@@ -189,7 +188,7 @@ class HicGraph:
         print('nodes to merge:')
         print(to_merge)
         
-        self.__merge_nodes(to_merge)
+        self.__merge_nodes_1(to_merge)
 
 
     def graph_reduce_2(self):
@@ -199,18 +198,30 @@ class HicGraph:
         return None
 
 
-    def __merge_nodes(self, to_merge):
+    def __merge_nodes_1(self, to_merge):
         """
         Used by methods graph_reduce_1 and graph_reduce_2 to merge the specified nodes (non-SNP) into one node.
         """
         print(self.nodes)
-        print(self.edge_list)
-        print(self.edge_table)
+        #print(self.edge_list)
+        #print(self.edge_table)
         reduced_graph = nx.Graph()
-        # nodes
-        # neighbors
-        # edges
-        # edge attributes
+
+        '''nodes'''
+        nodes_reduced = self.nodes[self.nodes['has_snp']==True].copy() # SNP-nodes, use .copy() to avoid SettingWithCopyWarning
+        for node_list in to_merge:
+            node_id = str(node_list)
+            chr = self.nodes.loc[node_list[0], 'chr']
+            chunk_start = self.nodes.loc[node_list[0], 'chunk_start']
+            chunk_end = self.nodes.loc[node_list[-1], 'chunk_end']
+            has_snp = False
+            nodes_reduced.loc[node_id]= [chr, chunk_start, chunk_end, has_snp]
+        nodes_reduced = nodes_reduced.sort_values(by=['chr', 'chunk_start'], inplace=False) # sort according to chromosome, then chunk start
+        print(nodes_reduced)
+        
+        '''neighbors'''
+        '''edges'''
+        '''edge attributes'''
         
 
     
