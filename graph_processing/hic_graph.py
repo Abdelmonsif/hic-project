@@ -202,9 +202,7 @@ class HicGraph:
         """
         Used by methods graph_reduce_1 and graph_reduce_2 to merge the specified nodes (non-SNP) into one node.
         """
-        print(self.nodes)
         #print(self.edge_list)
-        #print(self.edge_table)
         reduced_graph = nx.Graph()
 
         '''nodes'''
@@ -217,11 +215,43 @@ class HicGraph:
             has_snp = False
             nodes_reduced.loc[node_id]= [chr, chunk_start, chunk_end, has_snp]
         nodes_reduced = nodes_reduced.sort_values(by=['chr', 'chunk_start'], inplace=False) # sort according to chromosome, then chunk start
+        print(self.nodes)
         print(nodes_reduced)
         
-        '''neighbors'''
-        '''edges'''
-        '''edge attributes'''
+        '''edges and edge attributes'''
+        print(self.edge_table)
+        edge_table_reduced = pd.DataFrame(columns = ['source', 'target', 'contactCount', 'p-value', 'q-value'])
+        for node_id, node in nodes_reduced.iterrows(): # traverse through the chromosomes
+            if node['has_snp'] == False:
+                if len(eval(node_id)) > 1: # condidtion for merging
+                    new_node_targets = [] # lists containing the target nodes after merging (merged nodes as source)
+                    node_list_to_merge = eval(node_id)
+                    for node in node_list_to_merge:
+                        source_edges = self.edge_table[self.edge_table['source']==node] # find the edges connected to this node (as source)
+                        new_node_targets.extend(list(source_edges['target']))
+                        target_edges = self.edge_table[self.edge_table['target']==node] # find the edges connected to this node (as target)
+                        new_node_targets.extend(list(source_edges['source']))
+                        # remove merged edges from the edge table
+                    source = node_id # source of merged node
+                    target = str() # targets of merged node
+                    # mdedian of contactCount
+                    # median of p-value
+                    # median of q-value
+                    # what if there are only 2 edges that are merged? take median or mean?
+                    # add the new edge back to the edge table
+                elif len(eval(node_id)) == 1: # non-SNP node, but do NOT need to merge
+            elif node['has_snp'] == True: # SNP nodes
+            print('-------------------------------')
+
+        '''
+        for index, row in self.edge_table.iterrows():
+            print(index)
+            print(row)
+            if row['has_snp'] == True:
+                edge_table_reduced.append(row)
+        '''
+        print(edge_table_reduced)
+        
         
 
     
