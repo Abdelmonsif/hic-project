@@ -220,27 +220,37 @@ class HicGraph:
         
         '''edges and edge attributes'''
         print(self.edge_table)
-        edge_table_reduced = pd.DataFrame(columns = ['source', 'target', 'contactCount', 'p-value', 'q-value'])
         for node_id, node in nodes_reduced.iterrows(): # traverse through the chromosomes
             if node['has_snp'] == False:
                 if len(eval(node_id)) > 1: # condidtion for merging
-                    new_node_targets = [] # lists containing the target nodes after merging (merged nodes as source)
-                    node_list_to_merge = eval(node_id)
-                    for node in node_list_to_merge:
-                        source_edges = self.edge_table[self.edge_table['source']==node] # find the edges connected to this node (as source)
-                        new_node_targets.extend(list(source_edges['target']))
-                        target_edges = self.edge_table[self.edge_table['target']==node] # find the edges connected to this node (as target)
-                        new_node_targets.extend(list(source_edges['source']))
-                        # remove merged edges from the edge table
-                    source = node_id # source of merged node
-                    target = str() # targets of merged node
-                    # mdedian of contactCount
-                    # median of p-value
-                    # median of q-value
-                    # what if there are only 2 edges that are merged? take median or mean?
+                    node_id = eval(node_id) # convert from string to list
+                    new_edges = pd.DataFrame()
+                    for node in node_id:
+                        source_edges = self.edge_table[self.edge_table['source']==node].copy() # find the edges connected to this node (as source)
+                        target_edges = self.edge_table[self.edge_table['target']==node].copy() # find the edges connected to this node (as target)
+                        target_edges.rename(columns={'source': 'target', 'target':'source'}, inplace=True) # exchange source and target 
+                        target_edges = target_edges[[ 'id', 'source', 'target', 'contactCount', 'p-value', 'q-value']] # move columns to make columns consistent
+                        new_edges = new_edges.append(source_edges)
+                        new_edges = new_edges.append(target_edges)
+                        print(new_edges)
+
+                        #index_to_remove = self.edge_table[self.edge_table['Age'] == 30].index
+                        # Delete these row indexes from dataFrame
+                        #self.edge_table.drop(index_to_remove , inplace=True) # remove merged edges from the edge table
+                    
+                    source = str(node_id) # source of merged node
+                    #print(source)
+                    #print(target)
                     # add the new edge back to the edge table
-                elif len(eval(node_id)) == 1: # non-SNP node, but do NOT need to merge
-            elif node['has_snp'] == True: # SNP nodes
+                #elif len(eval(node_id)) == 1: # non-SNP node, but do NOT need to merge
+            #elif node['has_snp'] == True: # SNP nodes
+            
+            '''compute median/mean after all merging done'''
+            # mdedian of contactCount
+            # median of p-value
+            # median of q-value
+            # what if there are only 2 edges that are merged? take mean.    
+            break
             print('-------------------------------')
 
         '''
@@ -250,7 +260,6 @@ class HicGraph:
             if row['has_snp'] == True:
                 edge_table_reduced.append(row)
         '''
-        print(edge_table_reduced)
         
         
 
