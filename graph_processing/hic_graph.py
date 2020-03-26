@@ -9,6 +9,8 @@ from os import listdir
 from os.path import isfile, join
 import time
 import json
+import itertools
+
 
 class HicGraph:
     def __init__(self, edge_dir, node_dir, snps_dir, write_gexf_dir):
@@ -217,41 +219,49 @@ class HicGraph:
             has_snp = False
             nodes_reduced.loc[node_id]= [chr, chunk_start, chunk_end, has_snp]
         nodes_reduced = nodes_reduced.sort_values(by=['chr', 'chunk_start'], inplace=False) # sort according to chromosome, then chunk start
+        
         print(self.nodes)
         print(nodes_reduced)
+        #print(self.edge_table)
         
-        '''edges and edge attributes'''
+        self.edge_table['source'] = [str([x]) for x in list(self.edge_table['source'])]# convert everything to list
+        self.edge_table['target'] = [str([x]) for x in list(self.edge_table['target'])]# convert everything to list
+        self.edge_table['contactCount'] = [str([x]) for x in list(self.edge_table['contactCount'])]# convert everything to list
+        self.edge_table['p-value'] = [str([x]) for x in list(self.edge_table['p-value'])]# convert everything to list
+        self.edge_table['q-value'] = [str([x]) for x in list(self.edge_table['q-value'])]# convert everything to list
         print(self.edge_table)
+
+        '''merge edges and edge attributes'''
         for node_id, node in nodes_reduced.iterrows(): # traverse through the chromosomes
-            if node['has_snp'] == False:
-                if len(eval(node_id)) > 1: # condidtion for merging
-                    node_id = eval(node_id) # convert from string to list
-                    new_edges = pd.DataFrame()
-                    for node in node_id:
-                        source_edges = self.edge_table[self.edge_table['source']==node].copy() # find the edges connected to this node (as source)
-                        target_edges = self.edge_table[self.edge_table['target']==node].copy() # find the edges connected to this node (as target)
-                        target_edges.rename(columns={'source': 'target', 'target':'source'}, inplace=True) # exchange source and target 
-                        target_edges = target_edges[['source', 'target', 'contactCount', 'p-value', 'q-value']] # move columns to make columns consistent        
-                        new_edges = new_edges.append(source_edges)
-                        new_edges = new_edges.append(target_edges)                        
-                        index_to_remove = self.edge_table[(self.edge_table['source']==node) | (self.edge_table['target']==node)].index
-                        self.edge_table.drop(index_to_remove , inplace=True) # remove old edges from the edge table
-                    print(new_edges)
-                    target_nodes = list(set(list(new_edges['target']))) # set of targets
-                    print(target_nodes)
-                    for target_node in target_nodes:
-                        target_node_old_edges = new_edges[new_edges['target']==target_node]
-                        merged_edge = pd.Series([str(node_id), # source
-                                                 str(target_node), # target
-                                                 str(list(target_node_old_edges['contactCount'])), 
-                                                 str(list(target_node_old_edges['p-value'])), 
-                                                 str(list(target_node_old_edges['q-value']))], index=self.edge_table.columns) # add the new edge back to the edge table
-                        print(merged_edge)
-                #elif len(eval(node_id)) == 1: # non-SNP node, but do NOT need to merge
-            #elif node['has_snp'] == True: # SNP nodes
-            break
+            if node['has_snp'] == False and len(eval(node_id)) > 1: # condidtion for merging
+                node_id = eval(node_id) # convert from string to list
+                new_edges = pd.DataFrame()
+                for node in node_id:
+                    source_edges = self.edge_table[self.edge_table['source']==str([node])].copy() # find the edges connected to this node (as source)
+                    target_edges = self.edge_table[self.edge_table['target']==str([node])].copy() # find the edges connected to this node (as target)
+                    target_edges.rename(columns={'source': 'target', 'target':'source'}, inplace=True) # exchange source and target 
+                    target_edges = target_edges[['source', 'target', 'contactCount', 'p-value', 'q-value']] # move columns to make columns consistent        
+                    new_edges = new_edges.append(source_edges)
+                    new_edges = new_edges.append(target_edges)                        
+                    index_to_remove = self.edge_table[(self.edge_table['source']==str([node])) | (self.edge_table['target']==str([node]))].index  # remove old edges
+                    self.edge_table.drop(index_to_remove , inplace=True) # remove old edges
+                print(new_edges)
+                target_nodes = list(set(list(new_edges['target']))) # list of targets (unique)
+                target_nodes = [eval(x) for x in target_nodes] # list of targets (unique)
+                print(target_nodes)
+                for target_node in target_nodes:
+                    target_node_old_edges = new_edges[new_edges['target']==str(target_node)]
+                    merged_edge = pd.Series([str(node_id), # source
+                                             str(target_node), # target
+                                             str(list((itertools.chain.from_iterable([eval(x) for x in list(target_node_old_edges['contactCount'])])))), 
+                                             str(list((itertools.chain.from_iterable([eval(x) for x in list(target_node_old_edges['p-value'])])))), 
+                                             str(list((itertools.chain.from_iterable([eval(x) for x in list(target_node_old_edges['q-value'])]))))], 
+                                             index=self.edge_table.columns) # new edge 
+                    print(merged_edge)
+                    self.edge_table = self.edge_table.append(merged_edge, ignore_index=True)
+                    print(self.edge_table)
             print('-------------------------------')
-    
+
         '''compute median/mean after all merging done'''
         # mdedian of contactCount
         # median of p-value
