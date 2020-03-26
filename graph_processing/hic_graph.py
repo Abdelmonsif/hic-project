@@ -42,7 +42,7 @@ class HicGraph:
         self.edge_list = list(map(tuple, self.edge_list)) # edge list 
 
         self.edge_table = pd.DataFrame() # edge table       
-        self.edge_table['id'] = self.edge_ids  
+        #self.edge_table['id'] = self.edge_ids  
         self.edge_table['source'] = [x[0] for x in self.edge_list]
         self.edge_table['target'] = [x[1] for x in self.edge_list]
         self.edge_table['contactCount'] = self.contactCount
@@ -207,6 +207,8 @@ class HicGraph:
 
         '''nodes'''
         nodes_reduced = self.nodes[self.nodes['has_snp']==True].copy() # SNP-nodes, use .copy() to avoid SettingWithCopyWarning
+        nodes_reduced['node_id'] = [str([idx]) for idx in list(nodes_reduced.index)] # convert single int to list
+        nodes_reduced = nodes_reduced.set_index('node_id') # convert single int to list
         for node_list in to_merge:
             node_id = str(node_list)
             chr = self.nodes.loc[node_list[0], 'chr']
@@ -229,30 +231,33 @@ class HicGraph:
                         source_edges = self.edge_table[self.edge_table['source']==node].copy() # find the edges connected to this node (as source)
                         target_edges = self.edge_table[self.edge_table['target']==node].copy() # find the edges connected to this node (as target)
                         target_edges.rename(columns={'source': 'target', 'target':'source'}, inplace=True) # exchange source and target 
-                        target_edges = target_edges[[ 'id', 'source', 'target', 'contactCount', 'p-value', 'q-value']] # move columns to make columns consistent
+                        target_edges = target_edges[['source', 'target', 'contactCount', 'p-value', 'q-value']] # move columns to make columns consistent        
                         new_edges = new_edges.append(source_edges)
-                        new_edges = new_edges.append(target_edges)
-                        print(new_edges)
-
-                        #index_to_remove = self.edge_table[self.edge_table['Age'] == 30].index
-                        # Delete these row indexes from dataFrame
-                        #self.edge_table.drop(index_to_remove , inplace=True) # remove merged edges from the edge table
-                    
-                    source = str(node_id) # source of merged node
-                    #print(source)
-                    #print(target)
-                    # add the new edge back to the edge table
+                        new_edges = new_edges.append(target_edges)                        
+                        index_to_remove = self.edge_table[(self.edge_table['source']==node) | (self.edge_table['target']==node)].index
+                        self.edge_table.drop(index_to_remove , inplace=True) # remove old edges from the edge table
+                    print(new_edges)
+                    target_nodes = list(set(list(new_edges['target']))) # set of targets
+                    print(target_nodes)
+                    for target_node in target_nodes:
+                        target_node_old_edges = new_edges[new_edges['target']==target_node]
+                        merged_edge = pd.Series([str(node_id), # source
+                                                 str(target_node), # target
+                                                 str(list(target_node_old_edges['contactCount'])), 
+                                                 str(list(target_node_old_edges['p-value'])), 
+                                                 str(list(target_node_old_edges['q-value']))], index=self.edge_table.columns) # add the new edge back to the edge table
+                        print(merged_edge)
                 #elif len(eval(node_id)) == 1: # non-SNP node, but do NOT need to merge
             #elif node['has_snp'] == True: # SNP nodes
-            
-            '''compute median/mean after all merging done'''
-            # mdedian of contactCount
-            # median of p-value
-            # median of q-value
-            # what if there are only 2 edges that are merged? take mean.    
             break
             print('-------------------------------')
-
+    
+        '''compute median/mean after all merging done'''
+        # mdedian of contactCount
+        # median of p-value
+        # median of q-value
+        # what if there are only 2 edges that are merged? take mean.    
+        
         '''
         for index, row in self.edge_table.iterrows():
             print(index)
