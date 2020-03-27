@@ -245,22 +245,24 @@ class HicGraph:
                     new_edges = new_edges.append(target_edges)                        
                     index_to_remove = self.edge_table[(self.edge_table['source']==str([node])) | (self.edge_table['target']==str([node]))].index  # remove old edges
                     self.edge_table.drop(index_to_remove , inplace=True) # remove old edges
-                print(new_edges)
+                print('new_edges:\n', new_edges)
                 target_nodes = list(set(list(new_edges['target']))) # list of targets (unique)
                 target_nodes = [eval(x) for x in target_nodes] # list of targets (unique)
-                print(target_nodes)
+                print('target_nodes: ', target_nodes)
+                print('node_id: ', node_id)
                 for target_node in target_nodes:
-                    target_node_old_edges = new_edges[new_edges['target']==str(target_node)]
-                    merged_edge = pd.Series([str(node_id), # source
-                                             str(target_node), # target
-                                             str(list((itertools.chain.from_iterable([eval(x) for x in list(target_node_old_edges['contactCount'])])))), 
-                                             str(list((itertools.chain.from_iterable([eval(x) for x in list(target_node_old_edges['p-value'])])))), 
-                                             str(list((itertools.chain.from_iterable([eval(x) for x in list(target_node_old_edges['q-value'])]))))], 
-                                             index=self.edge_table.columns) # new edge 
-                    print(merged_edge)
-                    self.edge_table = self.edge_table.append(merged_edge, ignore_index=True)
-                    print(self.edge_table)
-            print('-------------------------------')
+                    if not set(target_node).issubset(node_id): # avoid self-loops after merging
+                        target_node_old_edges = new_edges[new_edges['target']==str(target_node)]
+                        merged_edge = pd.Series([str(node_id), # source
+                                                 str(target_node), # target
+                                                 str(list((itertools.chain.from_iterable([eval(x) for x in list(target_node_old_edges['contactCount'])])))), 
+                                                 str(list((itertools.chain.from_iterable([eval(x) for x in list(target_node_old_edges['p-value'])])))), 
+                                                 str(list((itertools.chain.from_iterable([eval(x) for x in list(target_node_old_edges['q-value'])]))))], 
+                                                 index=self.edge_table.columns) # new edge 
+                        print('merged edge:\n', merged_edge)
+                        self.edge_table = self.edge_table.append(merged_edge, ignore_index=True)
+                        print('edge table:\n', self.edge_table)
+                print('-------------------------------')
 
         '''compute median/mean after all merging done'''
         # mdedian of contactCount
