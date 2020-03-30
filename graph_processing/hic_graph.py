@@ -193,13 +193,6 @@ class HicGraph:
         self.__merge_nodes_1(to_merge)
 
 
-    def graph_reduce_2(self):
-        """
-        Merge the non-SNP nodes to nearest SNP nodes according to the distances.
-        """
-        return None
-
-
     def __merge_nodes_1(self, to_merge):
         """
         Used by methods graph_reduce_1 and graph_reduce_2 to merge the specified nodes (non-SNP) into one node.
@@ -250,6 +243,7 @@ class HicGraph:
                 target_nodes = [eval(x) for x in target_nodes] # list of targets (unique)
                 print('target_nodes: ', target_nodes)
                 print('node_id: ', node_id)
+                
                 for target_node in target_nodes:
                     if not set(target_node).issubset(node_id): # avoid self-loops after merging
                         target_node_old_edges = new_edges[new_edges['target']==str(target_node)]
@@ -259,9 +253,9 @@ class HicGraph:
                                                  str(list((itertools.chain.from_iterable([eval(x) for x in list(target_node_old_edges['p-value'])])))), 
                                                  str(list((itertools.chain.from_iterable([eval(x) for x in list(target_node_old_edges['q-value'])]))))], 
                                                  index=self.edge_table.columns) # new edge 
-                        print('merged edge:\n', merged_edge)
+                        print('merged edge:\n', merged_edge[['source', 'target', 'contactCount']])
                         self.edge_table = self.edge_table.append(merged_edge, ignore_index=True)
-                        print('edge table:\n', self.edge_table)
+                        print('edge table:\n', self.edge_table[['source', 'target', 'contactCount']])
                 print('-------------------------------')
 
         '''compute median/mean after all merging done'''
@@ -270,13 +264,17 @@ class HicGraph:
         # median of q-value
         # what if there are only 2 edges that are merged? take mean.    
         
-        '''
-        for index, row in self.edge_table.iterrows():
-            print(index)
-            print(row)
-            if row['has_snp'] == True:
-                edge_table_reduced.append(row)
-        '''
+        '''set list of original nodes as a feature in the dataframe'''
+
+        '''rename the nodes with chromosome-chunk_start-chunk_end'''
+
+
+    def graph_reduce_2(self):
+        """
+        Merge the non-SNP nodes to nearest SNP nodes according to the distances.
+        """
+        return None
+
         
         
 
