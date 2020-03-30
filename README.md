@@ -1,8 +1,8 @@
-# The Hi-c project Developing notes
+# The Hi-c project
 Developing notes for the hi-c project. Below is the flowchart of the codes for graph reduction:  
 
    <p align="center">
-   <img width="600" height="300" src="figures/flowchart.png">
+   <img width="1000" height="500" src="figures/flowchart.png">
    </p>
 
 ## Pre-process
@@ -27,13 +27,13 @@ Note: it is very important that the node ids in the graph are consistent with th
 The steps of the ```merge``` method are shown in following figures. Basically, for each node to merge, we get the edges connected to them. In the mean time, the target nodes are computed by taking the set of the target nodes:
 
    <p align="center">
-   <img width="600" height="300" src="figures/merge-1.png">
+   <img width="800" height="400" src="figures/merge-1.png">
    </p>
 
 Then, for each target node, compute the new edge for the merged node. Note that the edge attributes are computed by the median of edge attributes before merging. Use mean if there are only 2 edges that are merged:
 
    <p align="center">
-   <img width="600" height="300" src="figures/merge-2.png">
+   <img width="800" height="400" src="figures/merge-2.png">
    </p>
 
 ## Graph neural network for classification
