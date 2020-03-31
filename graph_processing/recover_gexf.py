@@ -21,6 +21,12 @@ def get_args():
                         default='../../test_data/test.csv',
                         required=False,
                         help='directory of output edge file.')  
+
+    parser.add_argument('-recover_dir',
+                        #default='../../test_data/G_snps_23_node.csv',
+                        default='../../test_data/test_recovered.gexf',
+                        required=False,
+                        help='directory of output edge file.')  
                  
     parser.add_argument('-snps_dir',
                         default='../../snp_map/snp_map.json',
@@ -34,8 +40,9 @@ if __name__ == "__main__":
     args = get_args()
     edge_dir = args.edge_dir
     node_dir = args.node_dir
+    recover_dir = args.recover_dir
     snps_dir = args.snps_dir
-    hic_graph = HicGraph(edge_dir, node_dir, snps_dir, "../../test_data/test_new.gexf")
+    hic_graph = HicGraph(edge_dir, node_dir, snps_dir, recover_dir)
     hic_graph.load_graph()
     hic_graph.export_original_graph()
 
