@@ -35,7 +35,6 @@ class HicGraph:
         self.nodes = self.__load_node(self.node_dir)
         self.node_list = self.nodes['node_id'] # get node list
         self.nodes.set_index('node_id', inplace=True)
-        self.nodes['has_snp'] = False # add a column to indicate presence of SNPs
         
         '''Generate a set of node ids. It is used to intersect with the set of node ids with SNPs.
         Might be deprecated in the future when using the whole main graph.'''
@@ -101,6 +100,7 @@ class HicGraph:
         Load the csv file containing SNPs of a patient, then add the locations of 
         SNPs to the nodes dataframe.
         """
+        self.nodes['has_snp'] = False # add a column to indicate presence of SNPs
         patient_snp = pd.read_csv(patient_dir, sep='	') # load patient SNPs as a dataframe
         self.snp_cols = [] # list containing all the SNPs of the patient
         snp_cols_1 = patient_snp.columns[(patient_snp == 1).iloc[0]].tolist()
