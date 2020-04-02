@@ -9,12 +9,12 @@ def get_args():
     parser = argparse.ArgumentParser('python')
 
     parser.add_argument('-data_old',
-                        default='../../test_data/test_2.gexf',
+                        default='../../test_data/test_4.gexf',
                         required=False,
                         help='directory of original hi-c graph')  
 
     parser.add_argument('-data_new',
-                        default='../../test_data/test_2_recovered.gexf',
+                        default='../../test_data/test_4_recovered.gexf',
                         required=False,
                         help='directory of new hi-c graph')  
  
@@ -31,14 +31,6 @@ if __name__=="__main__":
     print('matching topology...')
     print(nx.is_isomorphic(graph_old, graph_new))
     
-    print('matching topology with edge attributes...')
-    em = iso.numerical_edge_match('contactCount', None) # set default value to None
-    print(nx.is_isomorphic(graph_old, graph_new, edge_match=em))
-    em = iso.numerical_edge_match('p-value', None) # set default value to None
-    print(nx.is_isomorphic(graph_old, graph_new, edge_match=em))
-    em = iso.numerical_edge_match('q-value', None) # set default value to None
-    print(nx.is_isomorphic(graph_old, graph_new, edge_match=em))
-    
     print('matching topology with node attributes...')
     nm = iso.categorical_node_match('chunk_start', None) # set default value to None
     print(nx.is_isomorphic(graph_old, graph_new, node_match=nm))
@@ -46,5 +38,15 @@ if __name__=="__main__":
     print(nx.is_isomorphic(graph_old, graph_new, node_match=nm))
     nm = iso.categorical_node_match('chunk_end', None) # set default value to None
     print(nx.is_isomorphic(graph_old, graph_new, node_match=nm))
+
+    print('matching topology with edge attributes...')
+    em = iso.numerical_edge_match('contactCount', None) # set default value to None
+    print(nx.is_isomorphic(graph_old, graph_new, edge_match=em))
+    em = iso.numerical_edge_match('p-value', None) # set default value to None
+    print(nx.is_isomorphic(graph_old, graph_new, edge_match=em))
+    em = iso.numerical_edge_match('q-value', None) # set default value to None
+    print(nx.is_isomorphic(graph_old, graph_new, edge_match=em, node_match=nm))
+    
+
 
     

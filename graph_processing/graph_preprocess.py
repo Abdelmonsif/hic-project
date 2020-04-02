@@ -13,17 +13,17 @@ def get_args():
     parser = argparse.ArgumentParser('python')
 
     parser.add_argument('-data_dir',
-                        default='../../test_data/test_2.gexf',
+                        default='../../test_data/test_4.gexf',
                         required=False,
                         help='directory of original hi-c graph')  
 
     parser.add_argument('-edge_dir',
-                        default='../../test_data/test_2.h5',
+                        default='../../test_data/test_4.h5',
                         required=False,
                         help='directory of output edge file.')  
 
     parser.add_argument('-node_dir',
-                        default='../../test_data/test_2.csv',
+                        default='../../test_data/test_4.csv',
                         required=False,
                         help='directory of output edge file.')  
 
@@ -97,11 +97,14 @@ class HicGraph:
             q_value_array[i] = edge_attr['q-value'] # put q-value in the ith element of q_value_array
             edge_id_array[i] = edge_attr['id']# put edge id in the ith element of edge_id_array
             i += 1
+        #np.set_printoptions(precision=20)
+        #print(edge_id_array)
+        #print(p_value_array)
         #-------------------- end of for loop ---------------------
         edge_grp.create_dataset('edge_list', data=edge_list_array, dtype='i') # write to hdf5    
         edge_grp.create_dataset('contactCount', data=contactCount_array, dtype='i')
-        edge_grp.create_dataset('p_values', data=p_value_array, dtype='f')
-        edge_grp.create_dataset('q_values', data=q_value_array, dtype='f')
+        edge_grp.create_dataset('p_values', data=p_value_array, dtype='d')
+        edge_grp.create_dataset('q_values', data=q_value_array, dtype='d')
         edge_grp.create_dataset('edge_ids', data=edge_id_array, dtype='i')
  
         print('time elapsed for exporting edges: ')
