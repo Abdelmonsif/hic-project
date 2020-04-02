@@ -28,25 +28,21 @@ if __name__=="__main__":
     graph_old = nx.read_gexf(data_old)
     graph_new = nx.read_gexf(data_new)
     
-    print('matching topology...')
-    print(nx.is_isomorphic(graph_old, graph_new))
-    
-    print('matching topology with node attributes...')
-    nm = iso.categorical_node_match('chunk_start', None) # set default value to None
-    print(nx.is_isomorphic(graph_old, graph_new, node_match=nm))
-    nm = iso.categorical_node_match('chr', None) # set default value to None
-    print(nx.is_isomorphic(graph_old, graph_new, node_match=nm))
-    nm = iso.categorical_node_match('chunk_end', None) # set default value to None
-    print(nx.is_isomorphic(graph_old, graph_new, node_match=nm))
+    '''Test isomorphism with all combinations of node and edge attributes. 
+       This way seems faster than matching nodes or edges along.'''
+    node_attr_names = ['chr', 'chunk_start', 'chunk_end']
+    edge_attr_names = ['contactCount', 'p-value', 'q-value']
+    for node_attr in node_attr_names:
+        for edge_attr in edge_attr_names:
+            print('matching graphs with {} and {}...'.format(node_attr, edge_attr))
+            nm = iso.categorical_node_match(node_attr, None) # set default value to None
+            em = iso.numerical_edge_match(edge_attr, None) # set default value to None
+            if nx.is_isomorphic(graph_old, graph_new, edge_match=em, node_match=nm):
+                print('Pass!')
+            else:
+                print('Fail!')
+            print('-------------------------------------------')
 
-    print('matching topology with edge attributes...')
-    em = iso.numerical_edge_match('contactCount', None) # set default value to None
-    print(nx.is_isomorphic(graph_old, graph_new, edge_match=em))
-    em = iso.numerical_edge_match('p-value', None) # set default value to None
-    print(nx.is_isomorphic(graph_old, graph_new, edge_match=em))
-    em = iso.numerical_edge_match('q-value', None) # set default value to None
-    print(nx.is_isomorphic(graph_old, graph_new, edge_match=em, node_match=nm))
-    
 
 
     
