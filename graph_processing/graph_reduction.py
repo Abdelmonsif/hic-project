@@ -10,13 +10,13 @@ def get_args():
 
     parser.add_argument('-edge_dir',
                         #default='../../test_data/G_snps_23_edge.h5',
-                        default='../../test_data/test_3.h5',
+                        default='../../test_data/test_4.h5',
                         required=False,
                         help='directory of output edge file.')  
 
     parser.add_argument('-node_dir',
                         #default='../../test_data/G_snps_23_node.csv',
-                        default='../../test_data/test_3.csv',
+                        default='../../test_data/test_4.csv',
                         required=False,
                         help='directory of output edge file.')  
 

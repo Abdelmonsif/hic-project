@@ -224,6 +224,7 @@ class HicGraph:
         self.edge_table['q-value'] = [str([x]) for x in list(self.edge_table['q-value'])]# convert everything to list
         print(self.edge_table)
 
+        print('begin merging...')
         '''merge edges and edge attributes'''
         for node_id, node in nodes_reduced.iterrows(): # traverse through the chromosomes
             if node['has_snp'] == False and len(eval(node_id)) > 1: # condidtion for merging
