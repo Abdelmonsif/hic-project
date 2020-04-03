@@ -243,7 +243,7 @@ class HicGraph:
                 target_nodes = [eval(x) for x in target_nodes] # list of targets (unique)
                 print('target_nodes: ', target_nodes)
                 print('node_id: ', node_id)
-                
+                print('reduced nodes:', nodes_reduced)
                 for target_node in target_nodes:
                     if not set(target_node).issubset(node_id): # avoid self-loops after merging
                         target_node_old_edges = old_edges[old_edges['target']==str(target_node)]
@@ -253,10 +253,12 @@ class HicGraph:
                                                  str(list((itertools.chain.from_iterable([eval(x) for x in list(target_node_old_edges['p-value'])])))), 
                                                  str(list((itertools.chain.from_iterable([eval(x) for x in list(target_node_old_edges['q-value'])]))))], 
                                                  index=self.edge_table.columns) # new edge 
-                        print('merged edge:\n', merged_edge[['source', 'target', 'contactCount']])
+                        print('merged edge:\n', merged_edge[['source', 'target', 'contactCount', 'p-value']])
                         self.edge_table = self.edge_table.append(merged_edge, ignore_index=True)
-                        print('edge table:\n', self.edge_table[['source', 'target', 'contactCount']])
-                print('-------------------------------')
+                        print('edge table:\n', self.edge_table[['source', 'target', 'contactCount', 'p-value']])
+                print('----------------------------------------------------------------------')
+        print('reduced nodes:', nodes_reduced)
+        print('edge table:', self.edge_table)
 
         '''compute median/mean after all merging done'''
         # mdedian of contactCount

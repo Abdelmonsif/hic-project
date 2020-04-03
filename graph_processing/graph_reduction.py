@@ -35,7 +35,7 @@ def get_args():
 
 if __name__ == "__main__":
     pd.set_option("display.max_columns", 8)
-
+    pd.set_option('display.width', 200)
     args = get_args()
     edge_dir = args.edge_dir
     node_dir = args.node_dir
