@@ -10,7 +10,7 @@ from os.path import isfile, join
 import time
 import json
 import itertools
-
+from statistics import median
 
 class HicGraph:
     def __init__(self, edge_dir, node_dir, snps_dir, write_gexf_dir, verbose):
@@ -272,19 +272,27 @@ class HicGraph:
                     print('----------------------------------------------------------------------')
         
         if self.verbose == 1:
-            print('reduced nodes:', nodes_reduced)
-            print('edge table:', self.edge_table)
+            print('reduced nodes:\n', nodes_reduced)
+            print('edge table:\n', self.edge_table)
 
+        print('edge table:\n', self.edge_table)
         '''compute median/mean after all merging done'''
-        # mdedian of contactCount
-        # median of p-value
-        # median of q-value
-        # what if there are only 2 edges that are merged? take mean.    
+        self.edge_table['contactCount'] = self.__compute_median(self.edge_table['contactCount']) # median of contactCount
+        self.edge_table['p-value'] = self.__compute_median(self.edge_table['p-value']) # median of p-value
+        self.edge_table['q-value'] = self.__compute_median(self.edge_table['q-value']) # median of q-value
+        print('edge table:\n', self.edge_table)
         
         '''set list of original nodes as a feature in the dataframe'''
 
         '''rename the nodes with chromosome-chunk_start-chunk_end'''
 
+    def __compute_median(self, edge_series):
+        """
+        Compute the median value for each edge attributes.
+        """
+        edge_series = [eval(x) for x in list(edge_series)]
+        edge_series = [float(median(x)) for x in edge_series]
+        return edge_series
 
     def graph_reduce_2(self):
         """
