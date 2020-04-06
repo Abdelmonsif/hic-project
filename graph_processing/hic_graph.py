@@ -275,16 +275,32 @@ class HicGraph:
             print('reduced nodes:\n', nodes_reduced)
             print('edge table:\n', self.edge_table)
 
-        print('edge table:\n', self.edge_table)
         '''compute median/mean after all merging done'''
         self.edge_table['contactCount'] = self.__compute_median(self.edge_table['contactCount']) # median of contactCount
         self.edge_table['p-value'] = self.__compute_median(self.edge_table['p-value']) # median of p-value
         self.edge_table['q-value'] = self.__compute_median(self.edge_table['q-value']) # median of q-value
-        print('edge table:\n', self.edge_table)
-        
-        '''set list of original nodes as a feature in the dataframe'''
 
-        '''rename the nodes with chromosome-chunk_start-chunk_end'''
+        '''create node names with chr-chunk_start_chunk_end'''
+        nodes_reduced = nodes_reduced.astype(str)
+        chunk_start_series = nodes_reduced['chunk_start'].copy()
+        chunk_end_series = nodes_reduced['chunk_end'].copy()
+        nodes_reduced['node_names'] = nodes_reduced['chr'].str.cat(chunk_start_series, sep='-')
+        nodes_reduced['node_names'] = nodes_reduced['node_names'].str.cat(chunk_end_series, sep='-')
+        nodes_reduced.drop(columns=['chr', 'chunk_start', 'chunk_end'], inplace=True)
+        node_name_dict = nodes_reduced['node_names'].to_dict() # dictionary to map original node names from node list to chr-chunk_start-chunk-end
+        nodes_reduced.reset_index(inplace=True) # convert original node names from index to column
+        nodes_reduced.rename(columns={"node_id": "original_nodes"}, inplace=True) # rename this column
+        nodes_reduced.set_index('node_names', inplace=True)# set chr-chunk-start-chunk_end as new index
+        self.nodes_reduced = nodes_reduced
+
+        '''rename source and target in edge table with chromosome-chunk_start-chunk_end'''
+        self.edge_table['source'] = self.edge_table['source'].apply(lambda x: node_name_dict[x])
+        self.edge_table['target'] = self.edge_table['target'].apply(lambda x: node_name_dict[x])
+        self.edges_reduced = self.edge_table # we want to keep original edge_table in the future updates
+
+        #print('reduced nodes:\n', self.nodes_reduced)
+        #print('edge table:\n', self.edge_table)
+
 
     def __compute_median(self, edge_series):
         """
@@ -294,11 +310,17 @@ class HicGraph:
         edge_series = [float(median(x)) for x in edge_series]
         return edge_series
 
+
     def graph_reduce_2(self):
         """
         Merge the non-SNP nodes to nearest SNP nodes according to the distances.
         """
         return None
+
+
+    def export_reduced_graph(self, reduced_node_dir, reduced_edge_dir):
+        self.nodes_reduced.to_csv(reduced_node_dir, index=False)
+        self.edges_reduced.to_csv(reduced_edge_dir, index=False)
 
         
         
