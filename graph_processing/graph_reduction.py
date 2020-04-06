@@ -29,6 +29,11 @@ def get_args():
                         default='../../patient/BCAC-97446542.csv',
                         required=False,
                         help='location of the patient file.') 
+
+    parser.add_argument('-verbose',
+                        default=0,
+                        required=False,
+                        help='set to 1 for debugging.')
                  
     return parser.parse_args()
 
@@ -41,7 +46,8 @@ if __name__ == "__main__":
     node_dir = args.node_dir
     snps_dir = args.snps_dir
     patient_dir = args.patient_dir
-    hic_graph = HicGraph(edge_dir, node_dir, snps_dir, None)
+    verbose = int(args.verbose)
+    hic_graph = HicGraph(edge_dir, node_dir, snps_dir, None, verbose)
     hic_graph.load_graph()
     hic_graph.load_patient(patient_dir)
     hic_graph.graph_reduce_1()

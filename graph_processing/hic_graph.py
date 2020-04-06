@@ -13,11 +13,12 @@ import itertools
 
 
 class HicGraph:
-    def __init__(self, edge_dir, node_dir, snps_dir, write_gexf_dir):
+    def __init__(self, edge_dir, node_dir, snps_dir, write_gexf_dir, verbose):
         self.edge_dir = edge_dir
         self.node_dir = node_dir
         self.snps_dir = snps_dir
         self.write_gexf_dir = write_gexf_dir
+        self.verbose = verbose
         
 
     def load_graph(self):
@@ -187,8 +188,9 @@ class HicGraph:
             #print(rows_to_merge) 
             #print(node_ids_to_merge)
         to_merge = list(filter(None, to_merge)) # remove empty lists
-        print('nodes to merge:')
-        print(to_merge)
+        if self.verbose == 1:
+            print('nodes to merge:')
+            print(to_merge)
         
         self.__merge_nodes_1(to_merge)
 
@@ -213,18 +215,23 @@ class HicGraph:
             nodes_reduced.loc[node_id]= [chr, chunk_start, chunk_end, has_snp]
         nodes_reduced = nodes_reduced.sort_values(by=['chr', 'chunk_start'], inplace=False) # sort according to chromosome, then chunk start
         
-        print(self.nodes)
-        print(nodes_reduced)
-        #print(self.edge_table)
+        if self.verbose == 1:
+            print('nodes:')
+            print(self.nodes)
+            print('reduced nodes:')
+            print(nodes_reduced)
         
         self.edge_table['source'] = [str([x]) for x in list(self.edge_table['source'])]# convert everything to list
         self.edge_table['target'] = [str([x]) for x in list(self.edge_table['target'])]# convert everything to list
         self.edge_table['contactCount'] = [str([x]) for x in list(self.edge_table['contactCount'])]# convert everything to list
         self.edge_table['p-value'] = [str([x]) for x in list(self.edge_table['p-value'])]# convert everything to list
         self.edge_table['q-value'] = [str([x]) for x in list(self.edge_table['q-value'])]# convert everything to list
-        print(self.edge_table)
-
-        print('begin merging...')
+        
+        if self.verbose == 1:
+            print('edge table')
+            print(self.edge_table)
+            print('begin merging...')
+        
         '''merge edges and edge attributes'''
         for node_id, node in nodes_reduced.iterrows(): # traverse through the chromosomes
             if node['has_snp'] == False and len(eval(node_id)) > 1: # condidtion for merging
@@ -239,12 +246,15 @@ class HicGraph:
                     old_edges = old_edges.append(target_edges)                        
                     index_to_remove = self.edge_table[(self.edge_table['source']==str([node])) | (self.edge_table['target']==str([node]))].index  # remove old edges
                     self.edge_table.drop(index_to_remove , inplace=True) # remove old edges
-                print('old_edges:\n', old_edges)
+                
+                if self.verbose == 1:
+                    print('old_edges:\n', old_edges)
                 target_nodes = list(set(list(old_edges['target']))) # list of targets (unique)
                 target_nodes = [eval(x) for x in target_nodes] # list of targets (unique)
-                print('target_nodes: ', target_nodes)
-                print('node_id: ', node_id)
-                print('reduced nodes:', nodes_reduced)
+                if self.verbose == 1:
+                    print('target_nodes: ', target_nodes)
+                    print('node_id: ', node_id)
+                    print('reduced nodes:', nodes_reduced)
                 for target_node in target_nodes:
                     if not set(target_node).issubset(node_id): # avoid self-loops after merging
                         target_node_old_edges = old_edges[old_edges['target']==str(target_node)]
@@ -254,12 +264,16 @@ class HicGraph:
                                                  str(list((itertools.chain.from_iterable([eval(x) for x in list(target_node_old_edges['p-value'])])))), 
                                                  str(list((itertools.chain.from_iterable([eval(x) for x in list(target_node_old_edges['q-value'])]))))], 
                                                  index=self.edge_table.columns) # new edge 
-                        print('merged edge:\n', merged_edge[['source', 'target', 'contactCount', 'p-value']])
                         self.edge_table = self.edge_table.append(merged_edge, ignore_index=True)
-                        print('edge table:\n', self.edge_table[['source', 'target', 'contactCount', 'p-value']])
-                print('----------------------------------------------------------------------')
-        print('reduced nodes:', nodes_reduced)
-        print('edge table:', self.edge_table)
+                        if self.verbose == 1:                
+                            print('merged edge:\n', merged_edge[['source', 'target', 'contactCount', 'p-value']])
+                            print('edge table:\n', self.edge_table[['source', 'target', 'contactCount', 'p-value']])
+                if self.verbose == 1:
+                    print('----------------------------------------------------------------------')
+        
+        if self.verbose == 1:
+            print('reduced nodes:', nodes_reduced)
+            print('edge table:', self.edge_table)
 
         '''compute median/mean after all merging done'''
         # mdedian of contactCount
