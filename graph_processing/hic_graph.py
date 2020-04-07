@@ -335,7 +335,19 @@ class HicGraph:
         nx.set_edge_attributes(reduced_graph, edge_attr)
         
         nx.write_gexf(reduced_graph, reduced_gexf_dir) # export the reduced graph as gexf file.
-    
+
+        '''statistics'''
+        num_nodes_reduced = reduced_graph.number_of_nodes() # number of nodes
+        num_edges_reduced = reduced_graph.number_of_edges() # number of edges
+        avg_degree = sum([d[1] for d in reduced_graph.degree()])/num_nodes_reduced # average degree
+        num_isolated = len(list(nx.isolates(reduced_graph))) # number of isolated nodes 
+        density = nx.classes.function.density(reduced_graph) # density
+        
+        print('number of nodes:', num_nodes_reduced)
+        print('number of edges:', num_edges_reduced)
+        print('average degree:', avg_degree)
+        print('number of isolated nodes:', num_isolated)
+        print('density of reduced graph:', density)
         
 
         
