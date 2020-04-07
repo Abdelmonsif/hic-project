@@ -10,13 +10,13 @@ def get_args():
 
     parser.add_argument('-edge_dir',
                         #default='../../test_data/G_snps_23_edge.h5',
-                        default='../../test_data/test_3.h5',
+                        default='../../test_data/test_2.h5',
                         required=False,
                         help='directory of output edge file.')  
 
     parser.add_argument('-node_dir',
                         #default='../../test_data/G_snps_23_node.csv',
-                        default='../../test_data/test_3.csv',
+                        default='../../test_data/test_2.csv',
                         required=False,
                         help='directory of output edge file.')  
 
@@ -36,12 +36,12 @@ def get_args():
                         help='set to 1 for debugging.')
 
     parser.add_argument('-reduced_node_dir',
-                        default='../../test_data_reduced/reduced_node_test_3_2.csv',
+                        default='../../test_data_reduced/reduced_node_test_2_3.csv',
                         required=False,
                         help='csv file of reduced node table.') 
 
     parser.add_argument('-reduced_edge_dir',
-                        default='../../test_data_reduced/reduced_edge_test_3_2.csv',
+                        default='../../test_data_reduced/reduced_edge_test_2_3.csv',
                         required=False,
                         help='csv file of reduced node table.') 
                  
