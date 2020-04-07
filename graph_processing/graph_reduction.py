@@ -10,13 +10,13 @@ def get_args():
 
     parser.add_argument('-edge_dir',
                         #default='../../test_data/G_snps_23_edge.h5',
-                        default='../../test_data/test_1.h5',
+                        default='../../test_data/test_3.h5',
                         required=False,
                         help='directory of output edge file.')  
 
     parser.add_argument('-node_dir',
                         #default='../../test_data/G_snps_23_node.csv',
-                        default='../../test_data/test_1.csv',
+                        default='../../test_data/test_3.csv',
                         required=False,
                         help='directory of output edge file.')  
 
@@ -36,12 +36,12 @@ def get_args():
                         help='set to 1 for debugging.')
 
     parser.add_argument('-reduced_node_dir',
-                        default='../../test_data_reduced/reduced_node_test_1.csv',
+                        default='../../test_data_reduced/reduced_node_test_3_2.csv',
                         required=False,
                         help='csv file of reduced node table.') 
 
     parser.add_argument('-reduced_edge_dir',
-                        default='../../test_data_reduced/reduced_edge_test_1.csv',
+                        default='../../test_data_reduced/reduced_edge_test_3_2.csv',
                         required=False,
                         help='csv file of reduced node table.') 
                  
@@ -59,9 +59,10 @@ if __name__ == "__main__":
     verbose = int(args.verbose)
     reduced_node_dir = args.reduced_node_dir
     reduced_edge_dir = args.reduced_edge_dir
-    hic_graph = HicGraph(edge_dir, node_dir, snps_dir, None, verbose)
-    hic_graph.load_graph()
-    hic_graph.load_patient(patient_dir)
+
+    hic_graph = HicGraph(edge_dir, node_dir, snps_dir, None, verbose) # initiate graph
+    hic_graph.load_graph() # load original main graph
+    hic_graph.load_patient(patient_dir) # load patient data
     hic_graph.graph_reduce_1()
     hic_graph.export_reduced_graph(reduced_node_dir, reduced_edge_dir)
 
