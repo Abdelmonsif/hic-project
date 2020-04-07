@@ -291,10 +291,7 @@ class HicGraph:
         '''rename source and target in edge table with chromosome-chunk_start-chunk_end'''
         edges_reduced['source'] = edges_reduced['source'].apply(lambda x: node_name_dict[x])
         edges_reduced['target'] = edges_reduced['target'].apply(lambda x: node_name_dict[x])
-        self.edges_reduced = edges_reduced # we want to keep original edge_table in the future updates
-
-        #print('reduced nodes:\n', self.nodes_reduced)
-        #print('edge table:\n', edges_reduced)
+        self.edges_reduced = edges_reduced
 
 
     def __compute_median(self, edge_series):
@@ -314,8 +311,32 @@ class HicGraph:
 
 
     def export_reduced_graph(self, reduced_node_dir, reduced_edge_dir):
-        self.nodes_reduced.to_csv(reduced_node_dir, index=False)
-        self.edges_reduced.to_csv(reduced_edge_dir, index=False)
+        self.nodes_reduced.to_csv(reduced_node_dir, index=False) # save nodes
+        self.edges_reduced.to_csv(reduced_edge_dir, index=False) # save edges
+
+    def export_reduced_gexf(self, reduced_gexf_dir):
+        """
+        Export the reduced graph as gexf file.
+        """
+        reduced_graph = nx.Graph()
+
+        '''nodes'''
+        node_list = list(self.nodes_reduced.index.values) # node list
+        reduced_graph.add_nodes_from(node_list) # add nodes to graph
+        node_attr = self.nodes_reduced.to_dict('index') # make node dictionary 
+        nx.set_node_attributes(reduced_graph, node_attr) # add node dictionary as node attributes
+        
+        '''edges'''
+        self.edges_reduced['edge_names'] = list(zip(self.edges_reduced.source, self.edges_reduced.target)) # add reduced edge list to reduced edge table
+        self.edges_reduced.drop(columns=['source', 'target'], inplace=True)# drop source and target column
+        reduced_graph.add_edges_from(list(self.edges_reduced['edge_names'])) # add edges to graph
+        self.edges_reduced.set_index('edge_names', inplace=True)# make new edge names index
+        edge_attr = self.edges_reduced.to_dict('index') # make dictionary of edge attributes    
+        nx.set_edge_attributes(reduced_graph, edge_attr)
+        
+        nx.write_gexf(reduced_graph, reduced_gexf_dir) # export the reduced graph as gexf file.
+    
+        
 
         
         
