@@ -26,9 +26,6 @@ class HicGraph:
         Load the original main graph. All edge attributes and each node's chromosome, chunk_start and chun_end are loaded.
         The graph reduction algorithm is going to work on the 2 loaded data structures: 'nodes' and 'edge_list'
         """
-        print('loading the main graph...')
-        start=time.time()
-
         '''Load the json file containing the SNP mapping.'''
         with open(self.snps_dir) as f:
             self.snp_map = json.load(f)
@@ -58,9 +55,6 @@ class HicGraph:
         self.edge_table['contactCount'] = [str([x]) for x in list(self.edge_table['contactCount'])]
         self.edge_table['p-value'] = [str([x]) for x in list(self.edge_table['p-value'])]
         self.edge_table['q-value'] = [str([x]) for x in list(self.edge_table['q-value'])]
-
-        print('loading finished. Time for loading the graph:')
-        self.__report_elapsed_time(start)
 
 
     def __report_elapsed_time(self, start):
@@ -159,6 +153,8 @@ class HicGraph:
         Merge the nodes without SNP to nodes with SNP. The result graph will be a new NetworkX graph object.
         All non-SNP nodes are merged together.
         """
+        print('computing nodes to merge...')
+        start=time.time()
         to_merge = []        
         for chr in range(1,24): # for each chromosome
             rows_to_merge = [] # list of lists of rows in 23 chr dataframes to merge
@@ -183,14 +179,14 @@ class HicGraph:
             node_ids = list(df_chr.index)
             node_ids_to_merge = [list(map(node_ids.__getitem__, rows))  for rows in rows_to_merge] # get the node ids of the nodes to merge into one node on this chromosome
             to_merge.extend(node_ids_to_merge)
-            #print(df_chr)
-            #print(rows_to_merge) 
-            #print(node_ids_to_merge)
         to_merge = list(filter(None, to_merge)) # remove empty lists
+
         if self.verbose == 1:
             print('nodes to merge:')
             print(to_merge)
-        
+
+        self.__report_elapsed_time(start)
+
         self.__merge_nodes_1(to_merge)
 
 
@@ -208,6 +204,8 @@ class HicGraph:
             print(self.edge_table)
             print('merging nodes...')
 
+        print('merging nodes...')
+        start=time.time()
         '''merge nodes'''
         nodes_reduced = self.nodes[self.nodes['has_snp']==True].copy() # SNP-nodes, use .copy() to avoid SettingWithCopyWarning
         nodes_reduced['node_id'] = [str([idx]) for idx in list(nodes_reduced.index)] # convert single int to list
@@ -220,12 +218,15 @@ class HicGraph:
             has_snp = False
             nodes_reduced.loc[node_id]= [chr, chunk_start, chunk_end, has_snp]
         nodes_reduced = nodes_reduced.sort_values(by=['chr', 'chunk_start'], inplace=False) # sort according to chromosome, then chunk start
+        self.__report_elapsed_time(start)
         
         if self.verbose == 1:
             print('reduced nodes:')
             print(nodes_reduced)
             print('merging edges...')
         
+        print('merging edges...')
+        start=time.time()
         '''merge edges and edge attributes'''
         edges_reduced = self.edge_table.copy()
         for node_id, node in nodes_reduced.iterrows(): # traverse through the chromosomes
@@ -266,15 +267,21 @@ class HicGraph:
                 if self.verbose == 1:
                     print('----------------------------------------------------------------------')
         
+        self.__report_elapsed_time(start)
         if self.verbose == 1:
             print('reduced nodes:\n', nodes_reduced)
             print('edge table:\n', edges_reduced)
 
+        print('computing median...')
+        start=time.time()
         '''compute median/mean after all merging done'''
         edges_reduced['contactCount'] = self.__compute_median(edges_reduced['contactCount']) # median of contactCount
         edges_reduced['p-value'] = self.__compute_median(edges_reduced['p-value']) # median of p-value
         edges_reduced['q-value'] = self.__compute_median(edges_reduced['q-value']) # median of q-value
+        self.__report_elapsed_time(start)
 
+        print('renaming nodes...')
+        start=time.time()
         '''create node names with chr-chunk_start_chunk_end'''
         nodes_reduced = nodes_reduced.astype(str)
         chunk_start_series = nodes_reduced['chunk_start'].copy()
@@ -287,12 +294,15 @@ class HicGraph:
         nodes_reduced.rename(columns={"node_id": "original_nodes"}, inplace=True) # rename this column
         nodes_reduced.set_index('node_names', inplace=True)# set chr-chunk-start-chunk_end as new index
         self.nodes_reduced = nodes_reduced
+        self.__report_elapsed_time(start)
 
+        print('renaming edges...')
+        start=time.time()
         '''rename source and target in edge table with chromosome-chunk_start-chunk_end'''
         edges_reduced['source'] = edges_reduced['source'].apply(lambda x: node_name_dict[x])
         edges_reduced['target'] = edges_reduced['target'].apply(lambda x: node_name_dict[x])
         self.edges_reduced = edges_reduced
-
+        self.__report_elapsed_time(start)
 
     def __compute_median(self, edge_series):
         """
@@ -313,6 +323,7 @@ class HicGraph:
     def export_reduced_graph(self, reduced_node_dir, reduced_edge_dir):
         self.nodes_reduced.to_csv(reduced_node_dir, index=True) # save nodes
         self.edges_reduced.to_csv(reduced_edge_dir, index=False) # save edges
+
 
     def export_reduced_gexf(self, reduced_gexf_dir, reduced_graph_statistics_dir):
         """
