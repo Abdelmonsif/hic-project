@@ -311,10 +311,10 @@ class HicGraph:
 
 
     def export_reduced_graph(self, reduced_node_dir, reduced_edge_dir):
-        self.nodes_reduced.to_csv(reduced_node_dir, index=False) # save nodes
+        self.nodes_reduced.to_csv(reduced_node_dir, index=True) # save nodes
         self.edges_reduced.to_csv(reduced_edge_dir, index=False) # save edges
 
-    def export_reduced_gexf(self, reduced_gexf_dir):
+    def export_reduced_gexf(self, reduced_gexf_dir, reduced_graph_statistics_dir):
         """
         Export the reduced graph as gexf file.
         """
@@ -343,11 +343,20 @@ class HicGraph:
         num_isolated = len(list(nx.isolates(reduced_graph))) # number of isolated nodes 
         density = nx.classes.function.density(reduced_graph) # density
         
-        print('number of nodes:', num_nodes_reduced)
-        print('number of edges:', num_edges_reduced)
-        print('average degree:', avg_degree)
-        print('number of isolated nodes:', num_isolated)
-        print('density of reduced graph:', density)
+        statistics_dict = {'num_nodes_reduced':num_nodes_reduced,
+                           'num_edges_reduced':num_edges_reduced,
+                           'avg_degree':avg_degree,
+                           'num_isolated':num_isolated,
+                           'density':density}
+
+        with open(reduced_graph_statistics_dir, 'w') as outfile:
+            json.dump(statistics_dict, outfile)
+
+        #print('number of nodes:', num_nodes_reduced)
+        #print('number of edges:', num_edges_reduced)
+        #print('average degree:', avg_degree)
+        #print('number of isolated nodes:', num_isolated)
+        #print('density of reduced graph:', density)
         
 
         

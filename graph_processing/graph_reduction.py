@@ -45,9 +45,13 @@ def get_args():
                         required=False,
                         help='csv file of reduced node table.') 
 
-
     parser.add_argument('-reduced_gexf_dir',
                         default='../../test_data_reduced/reduced_gexf_test_1_3.gexf',
+                        required=False,
+                        help='csv file of reduced node table.') 
+
+    parser.add_argument('-reduced_graph_statistics',
+                        default='../../test_data_reduced/reduced_graph_statistics_test_1_3.json',
                         required=False,
                         help='csv file of reduced node table.') 
                  
@@ -66,13 +70,14 @@ if __name__ == "__main__":
     reduced_node_dir = args.reduced_node_dir
     reduced_edge_dir = args.reduced_edge_dir
     reduced_gexf_dir = args.reduced_gexf_dir
+    reduced_graph_statistics = args.reduced_graph_statistics
 
     hic_graph = HicGraph(edge_dir, node_dir, snps_dir, None, verbose) # initiate graph
     hic_graph.load_graph() # load original main graph
     hic_graph.load_patient(patient_dir) # load patient data
     hic_graph.graph_reduce_1()
     hic_graph.export_reduced_graph(reduced_node_dir, reduced_edge_dir) # export node table and edge table
-    hic_graph.export_reduced_gexf(reduced_gexf_dir) # export gexf file of reduced graph
+    hic_graph.export_reduced_gexf(reduced_gexf_dir, reduced_graph_statistics) # export gexf file of reduced graph
 
 
 
