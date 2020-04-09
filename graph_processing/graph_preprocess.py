@@ -13,17 +13,17 @@ def get_args():
     parser = argparse.ArgumentParser('python')
 
     parser.add_argument('-data_dir',
-                        default='../../test_data/test_4.gexf',
+                        default='../../test_data/test_0.gexf',
                         required=False,
                         help='directory of original hi-c graph')  
 
     parser.add_argument('-edge_dir',
-                        default='../../test_data/test_4.h5',
+                        default='../../test_data/test_0.h5',
                         required=False,
                         help='directory of output edge file.')  
 
     parser.add_argument('-node_dir',
-                        default='../../test_data/test_4.csv',
+                        default='../../test_data/test_0.csv',
                         required=False,
                         help='directory of output edge file.')  
 

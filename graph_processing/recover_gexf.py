@@ -12,19 +12,19 @@ def get_args():
 
     parser.add_argument('-edge_dir',
                         #default='../../test_data/G_snps_23_edge.h5',
-                        default='../../test_data/test_4.h5',
+                        default='../../test_data/test_0.h5',
                         required=False,
                         help='directory of output edge file.')  
 
     parser.add_argument('-node_dir',
                         #default='../../test_data/G_snps_23_node.csv',
-                        default='../../test_data/test_4.csv',
+                        default='../../test_data/test_0.csv',
                         required=False,
                         help='directory of output edge file.')  
 
     parser.add_argument('-recover_dir',
                         #default='../../test_data/G_snps_23_node.csv',
-                        default='../../test_data/test_4_recovered.gexf',
+                        default='../../test_data/test_0_recovered.gexf',
                         required=False,
                         help='directory of output edge file.')  
                  
@@ -42,7 +42,7 @@ if __name__ == "__main__":
     node_dir = args.node_dir
     recover_dir = args.recover_dir
     snps_dir = args.snps_dir
-    hic_graph = HicGraph(edge_dir, node_dir, snps_dir, recover_dir)
+    hic_graph = HicGraph(edge_dir, node_dir, snps_dir, recover_dir, verbose=0)
     hic_graph.load_graph()
     hic_graph.export_original_graph()
 

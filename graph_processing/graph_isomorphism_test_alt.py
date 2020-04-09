@@ -9,12 +9,12 @@ def get_args():
     parser = argparse.ArgumentParser('python')
 
     parser.add_argument('-data_old',
-                        default='../../test_data/test_4.gexf',
+                        default='../../test_data/test_0.gexf',
                         required=False,
                         help='directory of original hi-c graph')  
 
     parser.add_argument('-data_new',
-                        default='../../test_data/test_4_recovered.gexf',
+                        default='../../test_data/test_0_recovered.gexf',
                         required=False,
                         help='directory of new hi-c graph')  
  

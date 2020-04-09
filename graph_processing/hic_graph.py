@@ -301,6 +301,7 @@ class HicGraph:
         self.edges_reduced = edges_reduced
         self.__report_elapsed_time(start)
 
+
     def __compute_median(self, edge_series):
         """
         Compute the median value for each edge attributes.
@@ -314,7 +315,12 @@ class HicGraph:
         """
         A more efficient implementation of 'graph_reduce_1'
         """
-        return None
+        print(self.nodes)
+        print(self.edge_table)
+        
+
+        # make edge table that smaller number always source
+        
 
 
     def export_reduced_graph(self, reduced_node_dir, reduced_edge_dir):

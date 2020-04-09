@@ -75,6 +75,7 @@ def report_elapsed_time(start):
 
 if __name__ == "__main__":
     pd.set_option("display.max_columns", 8)
+    pd.set_option('max_rows', 30)
     pd.set_option('display.width', 200)
     args = get_args()
     edge_dir = args.edge_dir
@@ -108,9 +109,10 @@ if __name__ == "__main__":
     print('/**************************************************************/')
     print('Performing graph reduction......')
     start=time.time()
-    hic_graph.graph_reduce_1()
+    hic_graph.graph_reduce_2()
     report_elapsed_time(start)
 
+    '''
     print('/**************************************************************/')
     print('Exporting reduced node table and edge table......')
     start=time.time()
@@ -122,6 +124,7 @@ if __name__ == "__main__":
     start=time.time()    
     hic_graph.export_reduced_gexf(reduced_gexf_dir, reduced_graph_statistics) # export gexf file of reduced graph
     report_elapsed_time(start)
+    '''
 
 
 
