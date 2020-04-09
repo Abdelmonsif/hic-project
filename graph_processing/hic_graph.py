@@ -49,13 +49,6 @@ class HicGraph:
         self.edge_table['p-value'] = self.p_values
         self.edge_table['q-value'] = self.q_values
         
-        '''convert everything to list for future merging'''
-        self.edge_table['source'] = [str([x]) for x in list(self.edge_table['source'])]
-        self.edge_table['target'] = [str([x]) for x in list(self.edge_table['target'])]
-        self.edge_table['contactCount'] = [str([x]) for x in list(self.edge_table['contactCount'])]
-        self.edge_table['p-value'] = [str([x]) for x in list(self.edge_table['p-value'])]
-        self.edge_table['q-value'] = [str([x]) for x in list(self.edge_table['q-value'])]
-
 
     def __report_elapsed_time(self, start):
         end = time.time()   
@@ -154,7 +147,7 @@ class HicGraph:
         All non-SNP nodes are merged together.
         """
         print('computing nodes to merge...')
-        start=time.time()
+        start_time=time.time()
         to_merge = []        
         for chr in range(1,24): # for each chromosome
             rows_to_merge = [] # list of lists of rows in 23 chr dataframes to merge
@@ -185,7 +178,7 @@ class HicGraph:
             print('nodes to merge:')
             print(to_merge)
 
-        self.__report_elapsed_time(start)
+        self.__report_elapsed_time(start_time)
 
         self.__merge_nodes_1(to_merge)
 
@@ -194,8 +187,12 @@ class HicGraph:
         """
         Used by methods graph_reduce_1 and graph_reduce_2 to merge the specified nodes (non-SNP) into one node.
         """
-        #print(self.edge_list)
-        reduced_graph = nx.Graph()
+        '''convert everything in edge table to list for future merging'''
+        self.edge_table['source'] = [str([x]) for x in list(self.edge_table['source'])]
+        self.edge_table['target'] = [str([x]) for x in list(self.edge_table['target'])]
+        self.edge_table['contactCount'] = [str([x]) for x in list(self.edge_table['contactCount'])]
+        self.edge_table['p-value'] = [str([x]) for x in list(self.edge_table['p-value'])]
+        self.edge_table['q-value'] = [str([x]) for x in list(self.edge_table['q-value'])]
 
         if self.verbose == 1:
             print('nodes before reduction:')
@@ -315,7 +312,7 @@ class HicGraph:
 
     def graph_reduce_2(self):
         """
-        Merge the non-SNP nodes to nearest SNP nodes according to the distances.
+        A more efficient implementation of 'graph_reduce_1'
         """
         return None
 

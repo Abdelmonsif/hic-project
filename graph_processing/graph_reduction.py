@@ -10,12 +10,14 @@ def get_args():
     parser = argparse.ArgumentParser('python')
 
     parser.add_argument('-edge_dir',
-                        default='../../processed_main_graph/final_edge.h5',
+                        #default='../../processed_main_graph/final_edge.h5',
+                        default='../../test_data/test_1.h5',
                         required=False,
                         help='directory of output edge file.')  
 
     parser.add_argument('-node_dir',
-                        default='../../processed_main_graph/final_node.csv',
+                        #default='../../processed_main_graph/final_node.csv',
+                        default='../../test_data/test_1.csv',
                         required=False,
                         help='directory of output edge file.')  
 
@@ -35,22 +37,26 @@ def get_args():
                         help='set to 1 for debugging.')
 
     parser.add_argument('-reduced_node_dir',
-                        default='../../patients_reduced/BCAC-97446542-node.csv',
+                        #default='../../patients_reduced/BCAC-97446542-node.csv',
+                        default='../../test_data_reduced/reduced_node_test_1_4.csv',
                         required=False,
                         help='csv file of reduced node table.') 
 
     parser.add_argument('-reduced_edge_dir',
-                        default='../../patients_reduced/BCAC-97446542-edge.csv',
+                        #default='../../patients_reduced/BCAC-97446542-edge.csv',
+                        default='../../test_data_reduced/reduced_edge_test_1_4.csv',
                         required=False,
                         help='csv file of reduced node table.') 
 
     parser.add_argument('-reduced_gexf_dir',
-                        default='../../patients_reduced/BCAC-97446542.gexf',
+                        #default='../../patients_reduced/BCAC-97446542.gexf',
+                        default='../../test_data_reduced/reduced_gexf_test_1_4.csv',
                         required=False,
                         help='csv file of reduced node table.') 
 
     parser.add_argument('-reduced_graph_statistics',
-                        default='../../patients_reduced/BCAC-97446542-statistics.json',
+                        #default='../../patients_reduced/BCAC-97446542-statistics.json',
+                        default='../../test_data_reduced/reduced_gexf_statistics_test_1_4.csv',
                         required=False,
                         help='csv file of reduced node table.') 
                  
