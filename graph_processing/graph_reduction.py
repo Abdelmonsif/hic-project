@@ -76,6 +76,8 @@ def report_elapsed_time(start):
 if __name__ == "__main__":
     pd.set_option("display.max_columns", 8)
     pd.set_option('max_rows', 30)
+    pd.set_option('display.max_rows', 50)
+    pd.set_option('display.min_rows', 50)
     pd.set_option('display.width', 200)
     args = get_args()
     edge_dir = args.edge_dir

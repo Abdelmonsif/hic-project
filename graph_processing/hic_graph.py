@@ -318,8 +318,64 @@ class HicGraph:
         print(self.nodes)
         print(self.edge_table)
         
+        '''compute nodes to merge'''
+        print('computing nodes to merge...')
+        start_time=time.time()
+        to_merge = []        
+        for chr in range(1,24): # for each chromosome
+            rows_to_merge = [] # list of lists of rows in 23 chr dataframes to merge
+            df_chr = self.nodes[self.nodes['chr'] == chr]
+            snp_rows = np.where(df_chr.has_snp==True)[0] # row number of SNP nodes
+            num_rows = df_chr.shape[0]
+            rows = list(range(num_rows))
 
-        # make edge table that smaller number always source
+            if len(snp_rows) > 0:
+                start = 0
+                for snp_node in snp_rows: # generate lists of merged nodes
+                    end = snp_node
+                    if end > start: # avoid empty list when first node is SNP-node or consecutive SNP-nodes
+                        rows_to_merge.append(rows[start:end]) # get nodes whose row_numbers are smaller than snp_node 
+                    start = snp_node + 1 # next segment
+                end = num_rows # last segment
+                if end > start: # only do so when last node is not a SNP-node
+                    rows_to_merge.append(rows[start:end]) # get nodes whose row_numbers are smaller than snp_node 
+            elif len(snp_rows) == 0: # all nodes of this chromosome are non-SNP
+                rows_to_merge.append(rows)
+            
+            node_ids = list(df_chr.index)
+            node_ids_to_merge = [list(map(node_ids.__getitem__, rows))  for rows in rows_to_merge] # get the node ids of the nodes to merge into one node on this chromosome
+            to_merge.extend(node_ids_to_merge)
+        print(to_merge)
+        to_merge = list(filter(lambda x: len(x)>1, to_merge)) # remove empty lists and lists with single elements
+        print(to_merge)
+        if self.verbose == 1:
+            print('nodes to merge:')
+            print(to_merge)
+        self.__report_elapsed_time(start_time)
+
+        '''merge nodes by creating a new column indicating node ids after merging'''
+        self.nodes['new_id'] = self.nodes.index # need to execute this line everytime a new patient is loaded
+        print(self.nodes)
+        for node_list in to_merge: # compute new id by replacing old ones with the first id of nodes to merge
+            self.nodes.loc[node_list, ['new_id']] = node_list[0]
+        print(self.nodes)
+        
+        '''edges'''
+        edges_reduced = self.edge_table.copy() # copy the original edge table
+        print(edges_reduced)
+        source_target = edges_reduced[['source', 'target']].to_numpy() # make source always <= target
+        print(source_target)
+        source_target.sort(axis=1)
+        print(source_target)
+        edges_reduced[['source', 'target']] = source_target
+        print(edges_reduced)
+        
+        node_name_dict = self.nodes['new_id'].to_dict() # dictonry to map old nodes to new node ids
+        #print(node_name_dict)
+        edges_reduced['source'] = edges_reduced['source'].map(node_name_dict) # merging by renaming
+        edges_reduced['target'] = edges_reduced['target'].map(node_name_dict) # merging by renaming
+        print(edges_reduced)
+        # remove self-loops (rows with same source and target)
         
 
 
