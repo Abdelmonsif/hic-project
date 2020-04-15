@@ -9,7 +9,7 @@
 module purge
 source activate graph
 cd /work/derick/hi-c/hic-project/graph_processing/
-python graph_reduction > ./log/graph_reduction_profiling.log 2>&1
+python graph_reduction.py > ./log/graph_reduction_profiling.log 2>&1
 
 
 
