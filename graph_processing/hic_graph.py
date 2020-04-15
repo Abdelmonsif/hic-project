@@ -314,10 +314,7 @@ class HicGraph:
     def graph_reduce_2(self):
         """
         A more efficient implementation of 'graph_reduce_1'
-        """
-        print(self.nodes)
-        print(self.edge_table)
-        
+        """        
         '''compute nodes to merge'''
         print('computing nodes to merge...')
         start_time=time.time()
@@ -345,38 +342,69 @@ class HicGraph:
             node_ids = list(df_chr.index)
             node_ids_to_merge = [list(map(node_ids.__getitem__, rows))  for rows in rows_to_merge] # get the node ids of the nodes to merge into one node on this chromosome
             to_merge.extend(node_ids_to_merge)
-        print(to_merge)
         to_merge = list(filter(lambda x: len(x)>1, to_merge)) # remove empty lists and lists with single elements
-        print(to_merge)
         if self.verbose == 1:
             print('nodes to merge:')
             print(to_merge)
         self.__report_elapsed_time(start_time)
 
-        '''merge nodes by creating a new column indicating node ids after merging'''
+        print('merging nodes...')
+        start_time=time.time()
+        '''creating a new column indicating node ids after merging'''
         self.nodes['new_id'] = self.nodes.index # need to execute this line everytime a new patient is loaded
-        print(self.nodes)
         for node_list in to_merge: # compute new id by replacing old ones with the first id of nodes to merge
             self.nodes.loc[node_list, ['new_id']] = node_list[0]
-        print(self.nodes)
+
+        '''merge the nodes'''
+        merged_nodes_set = list(set(list(self.nodes['new_id']))) # set of new node ids
+        merged_nodes_list = [] # list of merged node series
+        for node in merged_nodes_set:
+            old_nodes = self.nodes[self.nodes['new_id']==node]
+            merged_node_id = old_nodes.at[old_nodes.index[0],'new_id'] # chromosome
+            chromosome = old_nodes.at[old_nodes.index[0],'chr'] # chromosome
+            chunk_start = old_nodes['chunk_start'].min() # chunk start
+            chunk_end = old_nodes['chunk_end'].max() # chunk end
+            has_snp = old_nodes.at[old_nodes.index[0],'has_snp'] # has SNP?
+            merged_node = pd.Series([merged_node_id, chromosome, chunk_start, chunk_end, has_snp], index=['node_id', 'chr','chunk_start','chunk_end','has_snp'])
+            merged_nodes_list.append(merged_node)
+        self.nodes_reduced = pd.concat(merged_nodes_list, axis=1).T # create new dataframe for final merged node table
+        self.nodes_reduced.set_index('node_id', inplace=True) # set new index as the index of node table
+
+        if self.verbose == 1:
+            print(self.nodes_reduced)
+        self.__report_elapsed_time(start_time)
         
-        '''edges'''
-        edges_reduced = self.edge_table.copy() # copy the original edge table
-        print(edges_reduced)
-        source_target = edges_reduced[['source', 'target']].to_numpy() # make source always <= target
-        print(source_target)
-        source_target.sort(axis=1)
-        print(source_target)
-        edges_reduced[['source', 'target']] = source_target
-        print(edges_reduced)
-        
+        print('merging edges...')
+        start_time=time.time()
+        '''merge edges and generate a new edge table'''
+        edge_table = self.edge_table.copy() # copy the original edge table, local to this function
         node_name_dict = self.nodes['new_id'].to_dict() # dictonry to map old nodes to new node ids
-        #print(node_name_dict)
-        edges_reduced['source'] = edges_reduced['source'].map(node_name_dict) # merging by renaming
-        edges_reduced['target'] = edges_reduced['target'].map(node_name_dict) # merging by renaming
-        print(edges_reduced)
-        # remove self-loops (rows with same source and target)
+        edge_table['source'] = edge_table['source'].map(node_name_dict) # merging by renaming
+        edge_table['target'] = edge_table['target'].map(node_name_dict) # merging by renaming
+        source_target = edge_table[['source', 'target']].to_numpy() # make source always <= target
+        source_target.sort(axis=1) # make source always <= target
+        edge_table[['source', 'target']] = source_target # make source always <= target
+        self_loop_idx = edge_table[edge_table['source']==edge_table['target']].index # remove self-loops (rows with same source and target)
+        edge_table.drop(self_loop_idx , inplace=True) # remove self-loops (rows with same source and target)
+        source_target_pairs = list(set(tuple(x) for x in edge_table[['source', 'target']].to_numpy())) # set of source-target pairs (source always <= target)
+        edges_list = [] # list to store the new merged edges
+        for source_target_pair in source_target_pairs: # compute median and append to new data frame
+            source = source_target_pair[0]
+            target = source_target_pair[1]
+            edges = edge_table[(edge_table['source']==source) & (edge_table['target']==target)]
+            contactCount = edges['contactCount'].median() # take median of edge attributes
+            p_value = edges['p-value'].median() # take median of edge attributes
+            q_value = edges['q-value'].median() # take median of edge attributes
+            merged_edge = pd.Series([source, target, contactCount, p_value, q_value], index=edges.columns)
+            edges_list.append(merged_edge)
+        self.edges_reduced = pd.concat(edges_list, axis=1).T # reduced edge table
+        convert_dict = {'source': int, 'target': int} 
+        self.edges_reduced = self.edges_reduced.astype(convert_dict) 
         
+        if self.verbose == 1:
+            print('reduced edges:')
+            print(self.edges_reduced)
+        self.__report_elapsed_time(start_time)
 
 
     def export_reduced_graph(self, reduced_node_dir, reduced_edge_dir):
