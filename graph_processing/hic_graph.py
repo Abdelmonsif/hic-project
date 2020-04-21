@@ -406,7 +406,7 @@ class HicGraph:
             print(self.edges_reduced)
         self.__report_elapsed_time(start_time)
 
-
+   
     def export_reduced_graph(self, reduced_node_dir, reduced_edge_dir):
         self.nodes_reduced.to_csv(reduced_node_dir, index=True) # save nodes
         self.edges_reduced.to_csv(reduced_edge_dir, index=False) # save edges
