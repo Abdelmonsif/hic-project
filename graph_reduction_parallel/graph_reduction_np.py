@@ -5,6 +5,8 @@ import pandas as pd
 import argparse
 import json
 import h5py
+import numpy as np
+import sys
 
 def get_args():
     parser = argparse.ArgumentParser('python')
@@ -114,15 +116,14 @@ def load_node(node_dir):
     return nodes
 
 
-def load_patient(nodes_df, patient_dir, snp_map, node_id_set):
+def load_patient(nodes_array, patient_dir, snp_map, node_id_set):
     """
     Load the csv file containing SNPs of a patient, then add the locations of 
     SNPs to the nodes dataframe.
-
-    Note: nodes_df is modified outside of this function.
     """
-    #print(snp_map)
-    nodes_df['has_snp'] = 0 # add a column to indicate presence of SNPs
+    if nodes_array.shape[1] == 5:
+        nodes_array = np.delete(nodes_array, 4, 1) # remove last patient's data if not first patients
+    nodes_array = np.insert(nodes_array, 4, 0, axis=1) # add a column to indicate presence of SNPs
     patient_snp = pd.read_csv(patient_dir, sep='	') # load patient SNPs as a dataframe
     snp_cols = [] # list containing all the SNPs of the patient
     snp_cols_1 = patient_snp.columns[(patient_snp == 1).iloc[0]].tolist()
@@ -134,12 +135,14 @@ def load_patient(nodes_df, patient_dir, snp_map, node_id_set):
     for snp in snp_cols:
         try:
             snp_locations.append(snp_map[snp][-1]) # last element is node id
-            #print(self.snp_map[snp])
         except:
             num_missing_snp += 1
     snp_locations = set(snp_locations) # there are multiple SNPs on a single node, so take the set of this list to remove duplicates
     snp_locations = list(snp_locations.intersection(node_id_set)) # this step may be redundant when using main graph as input
-    nodes_df.loc[snp_locations, 'has_snp'] = 1 # True if there is SNP, False if no SNP
+    node_ids = nodes_array[:,0] # first column is node ids
+    for snp_location in snp_locations:
+        nodes_array[node_ids==snp_location, 4] = 1 # set the rows on 5th 1 if it has snp 
+    return nodes_array
 
 
 def compute_nodes_to_merge(nodes_array):
@@ -153,11 +156,6 @@ def compute_nodes_to_merge(nodes_array):
 shared_mem_dict={} # dictionary pointing to shared memory
 if __name__ == "__main__":
     '''options and input arguments'''
-    pd.set_option("display.max_columns", 8)
-    pd.set_option('max_rows', 30)
-    pd.set_option('display.max_rows', 50)
-    pd.set_option('display.min_rows', 50)
-    pd.set_option('display.width', 200)
     args = get_args()
     edge_dir = args.edge_dir
     node_dir = args.node_dir
@@ -169,18 +167,22 @@ if __name__ == "__main__":
     reduced_gexf_dir = args.reduced_gexf_dir
     reduced_graph_statistics = args.reduced_graph_statistics
 
+    np.set_printoptions(threshold=sys.maxsize)
+    
     '''
     load the graph as numpy array.
-    node array columns: node_id, chr, chunk_start, chunk_end
-    edge array columns: source, target, contactCount, p-value, q-value
+    node array columns: node_id, chr, chunk_start, chunk_end.
+    edge array columns: source, target, contactCount, p-value, q-value.
     '''
     nodes_array, edges_array, snp_map, node_id_set = load_graph(node_dir, edge_dir, snps_dir)
     print(nodes_array)
     print(edges_array)
     
     '''load patient's snp info into nodes_array'''
-    #load_patient(nodes_df, patient_dir, snp_map, node_id_set)
-    #print(nodes_df)
+    nodes_array = load_patient(nodes_array, patient_dir, snp_map, node_id_set)
+    print(nodes_array)
+
+    '''compute the nodes to merge'''
 
 
 
