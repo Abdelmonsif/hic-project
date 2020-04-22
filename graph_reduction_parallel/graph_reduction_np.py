@@ -68,27 +68,28 @@ def load_graph(node_dir, edge_dir, snps_dir):
     Load the original main graph. All edge attributes and each node's chromosome, chunk_start and chun_end are loaded.
     The graph reduction algorithm is going to work on the 2 loaded data structures: 'nodes' and 'edge_list'
     """
-    '''Load the json file containing the SNP mapping.'''
+    '''load the files'''
     with open(snps_dir) as f:
         snp_map = json.load(f)
     edge_list, contactCount, p_values, q_values, edge_ids = load_edge(edge_dir)
-    
-    nodes_df = load_node(node_dir)
-    node_list = nodes_df['node_id'] # get node list
-    nodes_df.set_index('node_id', inplace=True)
+    nodes_df = load_node(node_dir) # nodes are pre-sorted according to chr and chunk_start
     
     '''Generate a set of node ids. It is used to intersect with the set of node ids with SNPs.
     Might be deprecated in the future when using the whole main graph.'''
-    node_id_set = set(nodes_df.index.values.tolist())
-    
+    node_list = nodes_df['node_id'].tolist() # get node list
+    node_id_set = set(node_list)
+
     edge_list = list(map(tuple, edge_list)) # edge list 
-    edge_df = pd.DataFrame() # edge table       
-    edge_df['source'] = [x[0] for x in edge_list]
-    edge_df['target'] = [x[1] for x in edge_list]
-    edge_df['contactCount'] = contactCount
-    edge_df['p-value'] = p_values
-    edge_df['q-value'] = q_values
-    return nodes_df, edge_df, snp_map
+    edges_df = pd.DataFrame() # edge table       
+    edges_df['source'] = [x[0] for x in edge_list]
+    edges_df['target'] = [x[1] for x in edge_list]
+    edges_df['contactCount'] = contactCount
+    edges_df['p-value'] = p_values
+    edges_df['q-value'] = q_values
+
+    nodes_array = nodes_df.to_numpy(dtype=int) # convert node table to numpy array
+    edge_array = edges_df.to_numpy(dtype=float) # convert edge table to numpy array
+    return nodes_array, edge_array, snp_map, node_id_set
     
 
 def load_edge(edge_dir):
@@ -113,29 +114,40 @@ def load_node(node_dir):
     return nodes
 
 
-def load_patient(nodes_df, patient_dir):
+def load_patient(nodes_df, patient_dir, snp_map, node_id_set):
     """
     Load the csv file containing SNPs of a patient, then add the locations of 
     SNPs to the nodes dataframe.
+
+    Note: nodes_df is modified outside of this function.
     """
+    #print(snp_map)
     nodes_df['has_snp'] = 0 # add a column to indicate presence of SNPs
     patient_snp = pd.read_csv(patient_dir, sep='	') # load patient SNPs as a dataframe
-    self.snp_cols = [] # list containing all the SNPs of the patient
+    snp_cols = [] # list containing all the SNPs of the patient
     snp_cols_1 = patient_snp.columns[(patient_snp == 1).iloc[0]].tolist()
     snp_cols_2 = patient_snp.columns[(patient_snp == 2).iloc[0]].tolist()
-    self.snp_cols.extend(snp_cols_1)
-    self.snp_cols.extend(snp_cols_2)
+    snp_cols.extend(snp_cols_1)
+    snp_cols.extend(snp_cols_2)
     snp_locations = [] # find the locations (node ids) of the snps
     num_missing_snp = 0 # number of missing snp for this patient, ignore them
-    for snp in self.snp_cols:
+    for snp in snp_cols:
         try:
-            snp_locations.append(self.snp_map[snp][-1]) # last element is node id
+            snp_locations.append(snp_map[snp][-1]) # last element is node id
             #print(self.snp_map[snp])
         except:
             num_missing_snp += 1
     snp_locations = set(snp_locations) # there are multiple SNPs on a single node, so take the set of this list to remove duplicates
-    snp_locations = list(snp_locations.intersection(self.node_id_set)) # this step may be redundant when using main graph as input
-    self.nodes.loc[snp_locations, 'has_snp'] = 1 # True if there is SNP, False if no SNP
+    snp_locations = list(snp_locations.intersection(node_id_set)) # this step may be redundant when using main graph as input
+    nodes_df.loc[snp_locations, 'has_snp'] = 1 # True if there is SNP, False if no SNP
+
+
+def compute_nodes_to_merge(nodes_array):
+    """
+    Given the node table as a numpy array, compute a list of lists of nodes to merge.
+
+    e.g., [[1,2,3],[4,5,6]]
+    """
 
 
 shared_mem_dict={} # dictionary pointing to shared memory
@@ -157,8 +169,19 @@ if __name__ == "__main__":
     reduced_gexf_dir = args.reduced_gexf_dir
     reduced_graph_statistics = args.reduced_graph_statistics
 
-    '''load the graph'''
-    nodes_df, edges_df, snp_map = load_graph(node_dir, edge_dir, snps_dir)
-    print(nodes_df)
-    print(edges_df)
-    #print(snp_map)
+    '''
+    load the graph as numpy array.
+    node array columns: node_id, chr, chunk_start, chunk_end
+    edge array columns: source, target, contactCount, p-value, q-value
+    '''
+    nodes_array, edges_array, snp_map, node_id_set = load_graph(node_dir, edge_dir, snps_dir)
+    print(nodes_array)
+    print(edges_array)
+    
+    '''load patient's snp info into nodes_array'''
+    #load_patient(nodes_df, patient_dir, snp_map, node_id_set)
+    #print(nodes_df)
+
+
+
+
