@@ -146,6 +146,18 @@ def load_patient(nodes_array, patient_dir, snp_map, node_id_set):
     return nodes_array
 
 
+def copyto_shared_mem(array, data_type):
+    """
+    Copy the input numpy array into a shared memory.
+    """
+    array_shape = array.shape
+    print(array_shape)
+    shared_mem = RawArray(data_type, array_shape[0] * array_shape[1]) # the Raw Array object is 1d
+    shared_mem_np = np.frombuffer(shared_mem, dtype=int).reshape(array_shape) # wrap with numpy interface
+    np.copyto(shared_mem_np, array)
+    return shared_mem_np
+
+
 def compute_nodes_to_merge(nodes_array):
     """
     Given the node table as a numpy array, compute a list of lists of nodes to merge.
@@ -189,22 +201,28 @@ if __name__ == "__main__":
     np.set_printoptions(threshold=sys.maxsize)
     
     '''
-    load the graph as numpy array.
-    node array columns: node_id, chr, chunk_start, chunk_end.
-    edge array columns: source, target, contactCount, p-value, q-value.
+    Load the graph as numpy array.
+    Node array columns: node_id, chr, chunk_start, chunk_end.
+    Edge array columns: source, target, contactCount, p-value, q-value.
     '''
     nodes_array, edges_array, snp_map, node_id_set = load_graph(node_dir, edge_dir, snps_dir)
     #print(nodes_array)
     #print(edges_array)
     
     '''
-    load patient's snp info into nodes_array
-    node array columns become: node_id, chr, chunk_start, chunk_end, has_snp
+    Load patient's snp info into nodes_array.
+    Node array columns become: node_id, chr, chunk_start, chunk_end, has_snp.
     '''
     nodes_array = load_patient(nodes_array, patient_dir, snp_map, node_id_set)
     #print(nodes_array)
 
-    '''compute the nodes to merge'''
+    '''
+    Convert original numpy array to shared memory. In the mean time, the original memory 
+    is released by re-assignment.
+    '''
+    nodes_array = copyto_shared_mem(array=nodes_array, data_type='l') # signed long (32-bit)
+
+    '''Compute the nodes to merge'''
     print('computing nodes to merge...')
     to_merge = compute_nodes_to_merge(nodes_array)
     print(to_merge)
