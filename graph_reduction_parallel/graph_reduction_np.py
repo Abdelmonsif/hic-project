@@ -148,10 +148,28 @@ def load_patient(nodes_array, patient_dir, snp_map, node_id_set):
 def compute_nodes_to_merge(nodes_array):
     """
     Given the node table as a numpy array, compute a list of lists of nodes to merge.
-
-    e.g., [[1,2,3],[4,5,6]]
+    To do this, we merge the nodes without SNP to nodes with SNP. The result graph will be a new NetworkX 
+    graph object. All non-SNP nodes are merged together.
+    example output: [[1,2,3],[4,5,6]]
     """
-
+    to_merge = [] # list containing lists of nodes to merge
+    for chr in range(1,24): # for each chromosome, can be parallelized
+        merged_nodes = []
+        merged_node = []
+        for row in nodes_array[nodes_array[:,1]==chr, :]: # for each row in this chromosome
+            #print(row)
+            if row[4]==0:
+                merged_node.append(row[0]) # append node id to merge
+            elif row[4]==1:
+                if len(merged_node) > 1: # counted as merged on when there are at least 2 nodes in the list
+                    merged_nodes.append(merged_node)
+                merged_node = []
+            else:
+                raise ValueError('has_snp column should be either integer of 1 or 0')
+        if len(merged_node) > 1: # counted as merged on when there are at least 2 nodes in the list
+            merged_nodes.append(merged_node)
+        to_merge.extend(merged_nodes)
+    return to_merge
 
 shared_mem_dict={} # dictionary pointing to shared memory
 if __name__ == "__main__":
@@ -175,15 +193,20 @@ if __name__ == "__main__":
     edge array columns: source, target, contactCount, p-value, q-value.
     '''
     nodes_array, edges_array, snp_map, node_id_set = load_graph(node_dir, edge_dir, snps_dir)
-    print(nodes_array)
-    print(edges_array)
+    #print(nodes_array)
+    #print(edges_array)
     
-    '''load patient's snp info into nodes_array'''
+    '''
+    load patient's snp info into nodes_array
+    node array columns become: node_id, chr, chunk_start, chunk_end, has_snp
+    '''
     nodes_array = load_patient(nodes_array, patient_dir, snp_map, node_id_set)
-    print(nodes_array)
+    #print(nodes_array)
 
     '''compute the nodes to merge'''
-
+    print('computing nodes to merge...')
+    to_merge = compute_nodes_to_merge(nodes_array)
+    print(to_merge)
 
 
 
