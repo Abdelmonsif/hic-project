@@ -234,12 +234,11 @@ def compute_nodes_to_merge_parallel_worker_func(chr):
 
 def merge_nodes(nodes_array, to_merge, num_processes):
     """
+    Single-process implementation to merge nodes. The 'num_process' argument is used to simulate multi-process scenario.
     Return a new node table containing merged nodes.
     nodes_array: input node table.
     to_merge: list of lists of nodes to merge.
     """
-    #print(to_merge)
-    #print(nodes_array)
     nodes_array_copy = nodes_array # a copy of original node table, we don't want to modify original one
     for old_nodes in to_merge: # difficult to parallelize because processes will be modifying shared array.
         for old_node in old_nodes:
@@ -278,6 +277,67 @@ def merge_nodes(nodes_array, to_merge, num_processes):
         old_to_new_dict.update(old_to_new_dict_chunk)
         nodes_array_copy = np.vstack([nodes_array_copy, new_nodes_chunk])
     return nodes_array_copy, old_to_new_dict
+
+
+def merge_nodes_parallel(nodes_array, to_merge, num_processes=1):
+    """
+    Multi-process implementation to merge nodes. The 'num_process' argument is used to simulate multi-process scenario.
+    Return a new node table containing merged nodes.
+    nodes_array: input node table.
+    to_merge: list of lists of nodes to merge.
+    """
+    '''main process'''
+    nodes_array_copy = nodes_array # a copy of original node table, we don't want to modify original one
+    for old_nodes in to_merge: # difficult to parallelize because processes will be modifying shared array.
+        for old_node in old_nodes:
+            idx = np.nonzero(nodes_array_copy[:,0]==old_node) # row index
+            nodes_array_copy = np.delete(nodes_array_copy, idx, 0) # delete corresponding row
+    unchanged_nodes = list(nodes_array_copy[:,0]) # keys also contents for unchanged nodes
+    old_to_new_dict = dict(zip(unchanged_nodes, unchanged_nodes)) # update the dictionary for edge reduction
+    nodes_per_process = math.ceil(len(to_merge)/num_processes) # size of chunk assigned to each process
+    to_merge_chunks = [to_merge[x:x+nodes_per_process] for x in range(0, len(to_merge), nodes_per_process)] # assign each chunk to a process
+   
+    '''child processes'''
+    with Pool(processes=num_processes, initializer=init_worker, initargs=(nodes_array, nodes_array.shape)) as pool:
+        results = pool.map(merge_nodes_parallel_worker_func, to_merge_chunks)
+
+    '''join to main process'''
+    for result in results:
+        old_to_new_dict.update(result[0])
+        nodes_array_copy = np.vstack([nodes_array_copy, result[1]])
+
+    return nodes_array_copy, old_to_new_dict   
+
+
+def merge_nodes_parallel_worker_func(to_merge_chunk):
+    """
+    Merge the nodes in given chunk and return a sub-node table for reduced nodes.
+    """
+    nodes_array = np.frombuffer(shared_mem_dict['X'], dtype=int).reshape(shared_mem_dict['X_shape']) # declare shared memory
+    old_to_new_dict_chunk = {}
+    new_nodes_chunk = []
+    for nodes in to_merge_chunk:
+        nodes_array_sub = [] # get sub-array of nodes to merge from shared memory
+        for node in nodes: # get the corresponding sub-array node table
+            nodes_array_sub.append(nodes_array[np.nonzero(nodes_array[:,0]==node)])
+        nodes_array_sub = np.concatenate(nodes_array_sub)
+        new_node_id = nodes_array_sub[0, 0] # use first old node id as merged node id
+        chromosome =  nodes_array_sub[0, 1] # chromosome of new node
+        chunk_start = np.amin(nodes_array_sub[:, 2]) # chunk_start of new node
+        chunk_end = np.amax(nodes_array_sub[:, 3])# chunk_end of new node
+        for node in nodes: # update the old to new node dictionary
+            old_to_new_dict_chunk[node] = new_node_id
+        new_nodes_chunk.append(np.array([new_node_id, chromosome, chunk_start, chunk_end, 0]))
+        #print(nodes)
+        #print(nodes_array_sub)
+        #print('new node id:', new_node_id)
+        #print('chr:', chromosome)
+        #print('chunk_start:', chunk_start)
+        #print('chunk_end:', chunk_end)
+    #print('old to new dict:', old_to_new_dict_chunk)
+    #print('new nodes array:', new_nodes_chunk)
+    new_nodes_chunk = np.vstack(new_nodes_chunk)
+    return (old_to_new_dict_chunk, new_nodes_chunk) # can only return one object
 
 
 def report_elapsed_time(start):
@@ -359,5 +419,18 @@ if __name__ == "__main__":
     print('Generating merged node table (single process)......')
     start_time = time.time() 
     nodes_array_reduced, old_to_new_dict = merge_nodes(nodes_array, to_merge, 10)
+    report_elapsed_time(start_time)  
 
+    print('/**************************************************************/')
+    print('Generating merged node table (multiple process)......')
+    start_time = time.time() 
+    nodes_array_reduced_parallel, old_to_new_dict_parallel = merge_nodes_parallel(nodes_array, to_merge, 10)
+    report_elapsed_time(start_time)  
 
+    print('testing if single process version matches multi process version (reduced node table)')
+    nodes_array_reduced = nodes_array_reduced[nodes_array_reduced[:,0].argsort()]
+    nodes_array_reduced_parallel = nodes_array_reduced_parallel[nodes_array_reduced_parallel[:,0].argsort()]
+    print(np.array_equal(nodes_array_reduced, nodes_array_reduced_parallel))
+
+    print('testing if single process version matches multi process version (old to new node dictionary)')
+    print(old_to_new_dict == old_to_new_dict_parallel)
