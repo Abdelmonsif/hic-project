@@ -9,20 +9,21 @@ import numpy as np
 import sys
 from multiprocessing import Pool, RawArray
 import time
+import math
 
 
 def get_args():
     parser = argparse.ArgumentParser('python')
 
     parser.add_argument('-edge_dir',
-                        default='../../processed_main_graph/final_edge.h5',
-                        #default='../../test_data/test_1.h5',
+                        #default='../../processed_main_graph/final_edge.h5',
+                        default='../../test_data/test_1.h5',
                         required=False,
                         help='directory of output edge file.')  
 
     parser.add_argument('-node_dir',
-                        default='../../processed_main_graph/final_node.csv',
-                        #default='../../test_data/test_1.csv',
+                        #default='../../processed_main_graph/final_node.csv',
+                        default='../../test_data/test_1.csv',
                         required=False,
                         help='directory of output edge file.')  
 
@@ -42,26 +43,26 @@ def get_args():
                         help='set to 1 for debugging.')
 
     parser.add_argument('-reduced_node_dir',
-                        default='../../patients_reduced/BCAC-97446542-node.csv',
-                        #default='../../test_data_reduced/reduced_node_test_1_4.csv',
+                        #default='../../patients_reduced/BCAC-97446542-node.csv',
+                        default='../../test_data_reduced/reduced_node_test_1_4.csv',
                         required=False,
                         help='csv file of reduced node table.') 
 
     parser.add_argument('-reduced_edge_dir',
-                        default='../../patients_reduced/BCAC-97446542-edge.csv',
-                        #default='../../test_data_reduced/reduced_edge_test_1_4.csv',
+                        #default='../../patients_reduced/BCAC-97446542-edge.csv',
+                        default='../../test_data_reduced/reduced_edge_test_1_4.csv',
                         required=False,
                         help='csv file of reduced node table.') 
 
     parser.add_argument('-reduced_gexf_dir',
-                        default='../../patients_reduced/BCAC-97446542.gexf',
-                        #default='../../test_data_reduced/reduced_gexf_test_1_4.csv',
+                        #default='../../patients_reduced/BCAC-97446542.gexf',
+                        default='../../test_data_reduced/reduced_gexf_test_1_4.csv',
                         required=False,
                         help='csv file of reduced node table.') 
 
     parser.add_argument('-reduced_graph_statistics',
-                        default='../../patients_reduced/BCAC-97446542-statistics.json',
-                        #default='../../test_data_reduced/reduced_gexf_statistics_test_1_4.csv',
+                        #default='../../patients_reduced/BCAC-97446542-statistics.json',
+                        default='../../test_data_reduced/reduced_gexf_statistics_test_1_4.csv',
                         required=False,
                         help='csv file of reduced node table.') 
                  
@@ -231,6 +232,54 @@ def compute_nodes_to_merge_parallel_worker_func(chr):
     return merged_nodes
 
 
+def merge_nodes(nodes_array, to_merge, num_processes):
+    """
+    Return a new node table containing merged nodes.
+    nodes_array: input node table.
+    to_merge: list of lists of nodes to merge.
+    """
+    #print(to_merge)
+    #print(nodes_array)
+    nodes_array_copy = nodes_array # a copy of original node table, we don't want to modify original one
+    for old_nodes in to_merge: # difficult to parallelize because processes will be modifying shared array.
+        for old_node in old_nodes:
+            idx = np.nonzero(nodes_array_copy[:,0]==old_node) # row index
+            nodes_array_copy = np.delete(nodes_array_copy, idx, 0) # delete corresponding row
+
+    unchanged_nodes = list(nodes_array_copy[:,0]) # keys also contents for unchanged nodes
+    old_to_new_dict = dict(zip(unchanged_nodes, unchanged_nodes)) # update the dictionary for edge reduction
+    nodes_per_process = math.ceil(len(to_merge)/num_processes) # size of chunk assigned to each process
+    to_merge_chunks = [to_merge[x:x+nodes_per_process] for x in range(0, len(to_merge), nodes_per_process)] # assign each chunk to a process
+    for to_merge_chunk in to_merge_chunks: # will be parallelize at this loop level
+        #print(to_merge_chunk)
+        old_to_new_dict_chunk = {}
+        new_nodes_chunk = []
+        for nodes in to_merge_chunk:
+            nodes_array_sub = [] # get sub-array of nodes to merge from shared memory
+            for node in nodes: # get the corresponding sub-array node table
+                nodes_array_sub.append(nodes_array[np.nonzero(nodes_array[:,0]==node)])
+            nodes_array_sub = np.concatenate(nodes_array_sub)
+            new_node_id = nodes_array_sub[0, 0] # use first old node id as merged node id
+            chromosome =  nodes_array_sub[0, 1] # chromosome of new node
+            chunk_start = np.amin(nodes_array_sub[:, 2]) # chunk_start of new node
+            chunk_end = np.amax(nodes_array_sub[:, 3])# chunk_end of new node
+            for node in nodes: # update the old to new node dictionary
+                old_to_new_dict_chunk[node] = new_node_id
+            new_nodes_chunk.append(np.array([new_node_id, chromosome, chunk_start, chunk_end, 0]))
+            #print(nodes)
+            #print(nodes_array_sub)
+            #print('new node id:', new_node_id)
+            #print('chr:', chromosome)
+            #print('chunk_start:', chunk_start)
+            #print('chunk_end:', chunk_end)
+        #print('old to new dict:', old_to_new_dict_chunk)
+        #print('new nodes array:', new_nodes_chunk)
+        new_nodes_chunk = np.vstack(new_nodes_chunk)
+        old_to_new_dict.update(old_to_new_dict_chunk)
+        nodes_array_copy = np.vstack([nodes_array_copy, new_nodes_chunk])
+    return nodes_array_copy, old_to_new_dict
+
+
 def report_elapsed_time(start):
     end = time.time()   
     time_elapsed = end - start
@@ -239,6 +288,7 @@ def report_elapsed_time(start):
     minute = time_elapsed//60
     time_elapsed = time_elapsed - minute * 60
     print('{}:{}:{}'.format(int(hour), int(minute), round(time_elapsed)))
+
 
 shared_mem_dict={} # dictionary pointing to shared memory
 if __name__ == "__main__":
@@ -273,17 +323,11 @@ if __name__ == "__main__":
     Load patient's snp info into nodes_array.
     Node array columns become: node_id, chr, chunk_start, chunk_end, has_snp.
     '''
-    
     print('/**************************************************************/')
     print('Loading patient info and add to graph......')
     start_time = time.time()
     nodes_array = load_patient(nodes_array, patient_dir, snp_map, node_id_set)
-    report_elapsed_time(start_time)   
-    
-    print('/**************************************************************/')
-    print('Loading patient info and add to graph......')
-    start_time = time.time()
-    report_elapsed_time(start_time)   
+    report_elapsed_time(start_time)    
 
     '''
     Convert original numpy array to shared memory. In the mean time, the original memory 
@@ -310,5 +354,10 @@ if __name__ == "__main__":
     
     print('testing if single process version matches multi process version:')
     print(to_merge.sort()==to_merge_parallel.sort())
+
+    print('/**************************************************************/')
+    print('Generating merged node table (single process)......')
+    start_time = time.time() 
+    nodes_array_reduced, old_to_new_dict = merge_nodes(nodes_array, to_merge, 10)
 
 
