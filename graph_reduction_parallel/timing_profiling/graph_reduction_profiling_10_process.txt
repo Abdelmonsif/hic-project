@@ -1,0 +1,20 @@
+/**************************************************************/
+Loading the graph......
+0:5:7
+/**************************************************************/
+Loading patient info and add to graph......
+0:2:27
+/**************************************************************/
+Copying data to shared memory......
+0:0:0
+/**************************************************************/
+Computing nodes to merge with single process......
+0:0:0
+/**************************************************************/
+Computing nodes to merge with multiple process......
+0:0:1
+testing if single process version matches multi process version:
+True
+/**************************************************************/
+Generating merged node table (multiple process)......
+1:1:57
