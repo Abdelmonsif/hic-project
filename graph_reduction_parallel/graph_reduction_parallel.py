@@ -297,6 +297,7 @@ def merge_nodes_parallel(nodes_array, to_merge, num_processes=1):
     old_to_new_dict = dict(zip(unchanged_nodes, unchanged_nodes)) # update the dictionary for edge reduction
     nodes_per_process = math.ceil(len(to_merge)/num_processes) # size of chunk assigned to each process
     to_merge_chunks = [to_merge[x:x+nodes_per_process] for x in range(0, len(to_merge), nodes_per_process)] # assign each chunk to a process
+    print('time of main process:')
     report_elapsed_time(start_time)  
     
     '''child processes'''
