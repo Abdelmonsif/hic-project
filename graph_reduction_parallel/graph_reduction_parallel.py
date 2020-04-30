@@ -287,6 +287,7 @@ def merge_nodes_parallel(nodes_array, to_merge, num_processes=1):
     to_merge: list of lists of nodes to merge.
     """
     '''main process'''
+    start_time = time.time()    
     nodes_array_copy = nodes_array # a copy of original node table, we don't want to modify original one
     for old_nodes in to_merge: # difficult to parallelize because processes will be modifying shared array.
         for old_node in old_nodes:
@@ -296,7 +297,8 @@ def merge_nodes_parallel(nodes_array, to_merge, num_processes=1):
     old_to_new_dict = dict(zip(unchanged_nodes, unchanged_nodes)) # update the dictionary for edge reduction
     nodes_per_process = math.ceil(len(to_merge)/num_processes) # size of chunk assigned to each process
     to_merge_chunks = [to_merge[x:x+nodes_per_process] for x in range(0, len(to_merge), nodes_per_process)] # assign each chunk to a process
-   
+    report_elapsed_time(start_time)  
+    
     '''child processes'''
     with Pool(processes=num_processes, initializer=init_worker, initargs=(nodes_array, nodes_array.shape)) as pool:
         results = pool.map(merge_nodes_parallel_worker_func, to_merge_chunks)
