@@ -289,10 +289,13 @@ def merge_nodes_parallel(nodes_array, to_merge, num_processes=1):
     '''main process'''
     start_time = time.time()    
     nodes_array_copy = nodes_array # a copy of original node table, we don't want to modify original one
+    idx_to_remove = []
     for old_nodes in to_merge: # difficult to parallelize because processes will be modifying shared array.
         for old_node in old_nodes:
-            idx = np.nonzero(nodes_array_copy[:,0]==old_node) # row index
-            nodes_array_copy = np.delete(nodes_array_copy, idx, 0) # delete corresponding row
+            idx = np.nonzero(nodes_array_copy[:,0]==old_node)
+            idx_to_remove.append(idx[0].item())
+    idx_to_remove = np.array(idx_to_remove)
+    nodes_array_copy = np.delete(nodes_array_copy, idx_to_remove, 0)
     unchanged_nodes = list(nodes_array_copy[:,0]) # keys also contents for unchanged nodes
     old_to_new_dict = dict(zip(unchanged_nodes, unchanged_nodes)) # update the dictionary for edge reduction
     nodes_per_process = math.ceil(len(to_merge)/num_processes) # size of chunk assigned to each process
