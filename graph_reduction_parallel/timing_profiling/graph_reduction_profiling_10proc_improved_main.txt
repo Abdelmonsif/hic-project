@@ -1,0 +1,29 @@
+/**************************************************************/
+Loading the graph......
+0:8:49
+/**************************************************************/
+Loading patient info and add to graph......
+0:2:34
+/**************************************************************/
+Copying data to shared memory......
+0:0:0
+/**************************************************************/
+Computing nodes to merge with single process......
+0:0:0
+/**************************************************************/
+Computing nodes to merge with multiple process......
+0:0:2
+testing if single process version matches multi process version:
+True
+/**************************************************************/
+Generating merged node table (single process)......
+1:9:48
+/**************************************************************/
+Generating merged node table (multiple process)......
+time of main process:
+0:10:0
+0:12:9
+testing if single process version matches multi process version (reduced node table)
+True
+testing if single process version matches multi process version (old to new node dictionary)
+True
