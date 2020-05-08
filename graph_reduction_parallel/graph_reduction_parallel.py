@@ -149,7 +149,7 @@ def load_patient(nodes_array, patient_dir, snp_map, node_id_set):
     return nodes_array
 
 
-def copyto_shared_mem(array, data_type):
+def copy_nodes_to_shared_mem(array, data_type):
     """
     Copy the input numpy array into a shared memory.
     """
@@ -346,6 +346,17 @@ def merge_nodes_parallel_worker_func(to_merge_chunk):
     return (old_to_new_dict_chunk, new_nodes_chunk) # can only return one object
 
 
+def copy_edges_to_shared_mem(array, data_type):
+    """
+    Copy the input numpy array into a shared memory.
+    """
+    array_shape = array.shape
+    shared_mem = RawArray(data_type, array_shape[0] * array_shape[1]) # the Raw Array object is 1d
+    shared_mem_np = np.frombuffer(shared_mem, dtype=np.single).reshape(array_shape) # wrap with numpy interface
+    np.copyto(shared_mem_np, array)
+    return shared_mem_np
+
+
 def report_elapsed_time(start):
     end = time.time()   
     time_elapsed = end - start
@@ -370,7 +381,7 @@ if __name__ == "__main__":
     reduced_gexf_dir = args.reduced_gexf_dir
     reduced_graph_statistics = args.reduced_graph_statistics
 
-    np.set_printoptions(threshold=sys.maxsize)
+    #np.set_printoptions(threshold=sys.maxsize)
     
     '''
     Load the graph as numpy array.
@@ -400,10 +411,11 @@ if __name__ == "__main__":
     is released by re-assignment.
     '''    
     print('/**************************************************************/')
-    print('Copying data to shared memory......')
+    print('Copying nodes_array to shared memory......')
     start_time = time.time()    
-    nodes_array = copyto_shared_mem(array=nodes_array, data_type='l') # signed long (32-bit)
+    nodes_array = copy_nodes_to_shared_mem(array=nodes_array, data_type='l') # signed long (32-bit)
     report_elapsed_time(start_time)   
+
 
     '''Compute the nodes to merge'''
     print('/**************************************************************/')
@@ -440,3 +452,13 @@ if __name__ == "__main__":
 
     print('testing if single process version matches multi process version (old to new node dictionary)')
     print(old_to_new_dict == old_to_new_dict_parallel)
+
+    '''
+    Convert original numpy array to shared memory. In the mean time, the original memory 
+    is released by re-assignment.
+    '''    
+    print('/**************************************************************/')
+    print('Copying edges_array to shared memory......')
+    start_time = time.time()    
+    edges_array = copy_edges_to_shared_mem(array=edges_array, data_type='f') # 32-bit float
+    report_elapsed_time(start_time)
