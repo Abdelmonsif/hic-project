@@ -94,8 +94,8 @@ def load_graph(node_dir, edge_dir, snps_dir):
     edges_df['q-value'] = q_values
 
     nodes_array = nodes_df.to_numpy(dtype=int) # convert node table to numpy array
-    edge_array = edges_df.to_numpy(dtype=float) # convert edge table to numpy array
-    return nodes_array, edge_array, snp_map, node_id_set
+    edges_array = edges_df.to_numpy(dtype=float) # convert edge table to numpy array
+    return nodes_array, edges_array, snp_map, node_id_set
     
 
 def load_edge(edge_dir):
@@ -357,6 +357,28 @@ def copy_edges_to_shared_mem(array, data_type):
     return shared_mem_np
 
 
+def merge_edges(edges_array, old_to_new_dict, num_processes):
+    """
+    Merge the edge table according to merged nodes.
+    Columns of edge table: source, target, contactCount, p-value, q-value.
+    """
+    edges_array_reduced = edges_array # make a copy
+    node_map = np.vectorize(old_to_new_dict.get) # mapping function to map from old node ids to new node ids
+    new_source = node_map(edges_array_reduced[:,0]) # convert source from float to int
+    new_target = node_map(edges_array_reduced[:,1]) # convert target from float to int
+    print(edges_array_reduced)
+    print(old_to_new_dict)
+    #print(new_source)
+    #print(new_target)
+    #print(edges_array_reduced.shape)
+    #print(new_source.shape)
+    #print(new_target.shape)
+    edges_array_reduced[:,0] = new_source # put new sources in edge table
+    edges_array_reduced[:,1] = new_target # put new targets in edge table
+    print(edges_array_reduced)
+    return edges_array_reduced
+
+
 def report_elapsed_time(start):
     end = time.time()   
     time_elapsed = end - start
@@ -462,3 +484,9 @@ if __name__ == "__main__":
     start_time = time.time()    
     edges_array = copy_edges_to_shared_mem(array=edges_array, data_type='f') # 32-bit float
     report_elapsed_time(start_time)
+
+    print('/**************************************************************/')
+    print('Generating merged edge table (single process)......')
+    start_time = time.time() 
+    edges_array_reduced = merge_edges(edges_array, old_to_new_dict, 10)
+    report_elapsed_time(start_time)  
