@@ -364,18 +364,31 @@ def merge_edges(edges_array, old_to_new_dict, num_processes):
     """
     edges_array_reduced = edges_array # make a copy
     node_map = np.vectorize(old_to_new_dict.get) # mapping function to map from old node ids to new node ids
-    new_source = node_map(edges_array_reduced[:,0]) # convert source from float to int
-    new_target = node_map(edges_array_reduced[:,1]) # convert target from float to int
-    print(edges_array_reduced)
-    print(old_to_new_dict)
-    #print(new_source)
-    #print(new_target)
-    #print(edges_array_reduced.shape)
-    #print(new_source.shape)
-    #print(new_target.shape)
-    edges_array_reduced[:,0] = new_source # put new sources in edge table
-    edges_array_reduced[:,1] = new_target # put new targets in edge table
-    print(edges_array_reduced)
+    new_source = node_map(edges_array_reduced[:,0]) # convert source from old to new
+    new_target = node_map(edges_array_reduced[:,1]) # convert target from old to new
+    
+    source_target_mat = np.hstack((new_source.reshape(len(new_source), 1), new_target.reshape(len(new_target), 1))) # two columns of source-target pairs
+    source_target_mat.sort(axis=1)# make source always <= target
+
+    edges_array_reduced[:,0] = source_target_mat[:, 0] # put new sources in edge table
+    edges_array_reduced[:,1] = source_target_mat[:, 1] # put new targets in edge table
+    
+    # remove self-loops
+    idx_to_remove =np.nonzero(edges_array_reduced[:,0]==edges_array_reduced[:,1])[0]
+    edges_array_reduced = np.delete(edges_array_reduced, idx_to_remove, 0)
+
+    source_target_pairs = list(set([tuple(x) for x in edges_array_reduced[:,0:2]])) # set of source-target pairs (source always <= target)
+    new_edges = [] # list of new edges
+    for source_target_pair in source_target_pairs: # parallelize this loop
+        idx_source = edges_array_reduced[:,0]==source_target_pair[0]
+        idx_target = edges_array_reduced[:,1]==source_target_pair[1]
+        pair_idx = idx_source & idx_target
+        pair_idx = np.nonzero(pair_idx)[0] # indexes of rows that has source and target in this pair
+        old_edges = edges_array_reduced[pair_idx] # array of corresponding old nodes 
+        new_edge = np.median(old_edges, axis=0)
+        new_edges.append(new_edge)
+    edges_array_reduced = np.vstack(new_edges) # put the new edges in one numpy array
+    print(edges_array_reduced.shape)
     return edges_array_reduced
 
 
