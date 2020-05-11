@@ -378,6 +378,10 @@ def merge_edges(edges_array, old_to_new_dict, num_processes):
     edges_array_reduced = np.delete(edges_array_reduced, idx_to_remove, 0)
 
     source_target_pairs = list(set([tuple(x) for x in edges_array_reduced[:,0:2]])) # set of source-target pairs (source always <= target)
+    
+    # wrap into shared memory
+    edges_array_reduced = copy_edges_to_shared_mem(array=edges_array_reduced, data_type='f') # 32-bit float
+    
     new_edges = [] # list of new edges
     for source_target_pair in source_target_pairs: # parallelize this loop
         idx_source = edges_array_reduced[:,0]==source_target_pair[0]
@@ -388,8 +392,61 @@ def merge_edges(edges_array, old_to_new_dict, num_processes):
         new_edge = np.median(old_edges, axis=0)
         new_edges.append(new_edge)
     edges_array_reduced = np.vstack(new_edges) # put the new edges in one numpy array
-    print(edges_array_reduced.shape)
+    #print(edges_array_reduced.shape)
     return edges_array_reduced
+
+
+def merge_edges_parallel(edges_array, old_to_new_dict, num_processes):
+    """
+    Merge the edge table according to merged nodes.
+    Columns of edge table: source, target, contactCount, p-value, q-value.
+    """
+    start_time = time.time()  
+    edges_array_reduced = edges_array # make a copy
+    node_map = np.vectorize(old_to_new_dict.get) # mapping function to map from old node ids to new node ids
+    new_source = node_map(edges_array_reduced[:,0]) # convert source from old to new
+    new_target = node_map(edges_array_reduced[:,1]) # convert target from old to new
+    
+    source_target_mat = np.hstack((new_source.reshape(len(new_source), 1), new_target.reshape(len(new_target), 1))) # two columns of source-target pairs
+    source_target_mat.sort(axis=1)# make source always <= target
+
+    edges_array_reduced[:,0] = source_target_mat[:, 0] # put new sources in edge table
+    edges_array_reduced[:,1] = source_target_mat[:, 1] # put new targets in edge table
+    
+    # remove self-loops
+    idx_to_remove =np.nonzero(edges_array_reduced[:,0]==edges_array_reduced[:,1])[0]
+    edges_array_reduced = np.delete(edges_array_reduced, idx_to_remove, 0)
+
+    source_target_pairs = list(set([tuple(x) for x in edges_array_reduced[:,0:2]])) # set of source-target pairs (source always <= target)
+
+    # wrap into shared memory
+    edges_array_reduced = copy_edges_to_shared_mem(array=edges_array_reduced, data_type='f') # 32-bit float
+
+    print('time of main process:')
+    report_elapsed_time(start_time)
+    
+    '''child processes'''
+    with Pool(processes=num_processes, initializer=init_worker, initargs=(edges_array_reduced, edges_array_reduced.shape)) as pool:
+        new_edges = pool.map(merge_edges_parallel_worker_func, source_target_pairs)
+
+    '''join results of child processes'''
+    edges_array_reduced = np.vstack(new_edges) # put the new edges in one numpy array
+    #print(edges_array_reduced.shape)
+    return edges_array_reduced
+
+
+def merge_edges_parallel_worker_func(source_target_pair):
+    """
+    Worker function to compute a merged new edge. 
+    """
+    edges_array_reduced = np.frombuffer(shared_mem_dict['X'], dtype=np.single).reshape(shared_mem_dict['X_shape']) # declare shared memory
+    idx_source = edges_array_reduced[:,0]==source_target_pair[0]
+    idx_target = edges_array_reduced[:,1]==source_target_pair[1]
+    pair_idx = idx_source & idx_target
+    pair_idx = np.nonzero(pair_idx)[0] # indexes of rows that has source and target in this pair
+    old_edges = edges_array_reduced[pair_idx] # array of corresponding old nodes 
+    new_edge = np.median(old_edges, axis=0)
+    return new_edge
 
 
 def report_elapsed_time(start):
@@ -484,22 +541,26 @@ if __name__ == "__main__":
     nodes_array_reduced = nodes_array_reduced[nodes_array_reduced[:,0].argsort()]
     nodes_array_reduced_parallel = nodes_array_reduced_parallel[nodes_array_reduced_parallel[:,0].argsort()]
     print(np.array_equal(nodes_array_reduced, nodes_array_reduced_parallel))
+    #print(nodes_array_reduced)
+    #print(nodes_array_reduced_parallel)
 
     print('testing if single process version matches multi process version (old to new node dictionary)')
     print(old_to_new_dict == old_to_new_dict_parallel)
 
-    '''
-    Convert original numpy array to shared memory. In the mean time, the original memory 
-    is released by re-assignment.
-    '''    
-    print('/**************************************************************/')
-    print('Copying edges_array to shared memory......')
-    start_time = time.time()    
-    edges_array = copy_edges_to_shared_mem(array=edges_array, data_type='f') # 32-bit float
-    report_elapsed_time(start_time)
+    #print('/**************************************************************/')
+    #print('Generating merged edge table (single process)......')
+    #start_time = time.time() 
+    #edges_array_reduced = merge_edges(edges_array, old_to_new_dict, 10)
+    #report_elapsed_time(start_time)
 
     print('/**************************************************************/')
-    print('Generating merged edge table (single process)......')
+    print('Generating merged edge table (multi process)......')
     start_time = time.time() 
-    edges_array_reduced = merge_edges(edges_array, old_to_new_dict, 10)
-    report_elapsed_time(start_time)  
+    edges_array_reduced_parallel = merge_edges_parallel(edges_array, old_to_new_dict, 5)
+    report_elapsed_time(start_time)
+
+    #print('testing if single process version matches multi process version (reduced edge table)')
+    #edges_array_reduced = np.sort(edges_array_reduced, axis=None)
+    #edges_array_reduced_parallel = np.sort(edges_array_reduced_parallel, axis=None)
+    #print(np.array_equal(edges_array_reduced, edges_array_reduced_parallel))
+    
