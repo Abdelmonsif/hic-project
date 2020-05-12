@@ -9,7 +9,7 @@
 module purge
 source activate graph
 cd /work/derick/hi-c/hic-project/graph_reduction_parallel/
-python graph_reduction_parallel.py -edge_dir ../../processed_main_graph/final_edge.h5 -node_dir ../../processed_main_graph/final_node.csv > ./log/graph_reduction_profiling_multi.log 2>&1
+python graph_reduction_parallel.py -edge_dir ../../processed_main_graph/final_edge.h5 -node_dir ../../processed_main_graph/final_node.csv > ./log/graph_reduction_profiling_multi_12proc.log 2>&1
 
 
 

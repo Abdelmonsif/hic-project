@@ -425,28 +425,41 @@ def merge_edges_parallel(edges_array, old_to_new_dict, num_processes):
     print('time of main process:')
     report_elapsed_time(start_time)
     
+    edges_per_process = math.ceil(len(source_target_pairs)/num_processes) # size of chunk assigned to each process
+    source_target_pairs_chunks = [source_target_pairs[x:x+edges_per_process] for x in range(0, len(source_target_pairs), edges_per_process)] # assign each chunk to a process
+    #print('number of source target pairs:', len(source_target_pairs))
+    #print('number of pairs assigned to processes:')
+    #for source_target_pairs_chunk in source_target_pairs_chunks:
+    #    print(len(source_target_pairs_chunk))
+
     '''child processes'''
     with Pool(processes=num_processes, initializer=init_worker, initargs=(edges_array_reduced, edges_array_reduced.shape)) as pool:
-        new_edges = pool.map(merge_edges_parallel_worker_func, source_target_pairs)
+        list_of_new_edges = pool.map(merge_edges_parallel_worker_func, source_target_pairs_chunks)
 
     '''join results of child processes'''
+    new_edges = []
+    for x in list_of_new_edges:
+        new_edges.extend(x)
     edges_array_reduced = np.vstack(new_edges) # put the new edges in one numpy array
     #print(edges_array_reduced.shape)
     return edges_array_reduced
 
 
-def merge_edges_parallel_worker_func(source_target_pair):
+def merge_edges_parallel_worker_func(source_target_pairs):
     """
     Worker function to compute a merged new edge. 
     """
-    edges_array_reduced = np.frombuffer(shared_mem_dict['X'], dtype=np.single).reshape(shared_mem_dict['X_shape']) # declare shared memory
-    idx_source = edges_array_reduced[:,0]==source_target_pair[0]
-    idx_target = edges_array_reduced[:,1]==source_target_pair[1]
-    pair_idx = idx_source & idx_target
-    pair_idx = np.nonzero(pair_idx)[0] # indexes of rows that has source and target in this pair
-    old_edges = edges_array_reduced[pair_idx] # array of corresponding old nodes 
-    new_edge = np.median(old_edges, axis=0)
-    return new_edge
+    new_edges = []
+    for source_target_pair in source_target_pairs:
+        edges_array_reduced = np.frombuffer(shared_mem_dict['X'], dtype=np.single).reshape(shared_mem_dict['X_shape']) # declare shared memory
+        idx_source = edges_array_reduced[:,0]==source_target_pair[0]
+        idx_target = edges_array_reduced[:,1]==source_target_pair[1]
+        pair_idx = idx_source & idx_target
+        pair_idx = np.nonzero(pair_idx)[0] # indexes of rows that has source and target in this pair
+        old_edges = edges_array_reduced[pair_idx] # array of corresponding old nodes 
+        new_edge = np.median(old_edges, axis=0)
+        new_edges.append(new_edge)
+    return new_edges
 
 
 def report_elapsed_time(start):
@@ -533,8 +546,10 @@ if __name__ == "__main__":
 
     print('/**************************************************************/')
     print('Generating merged node table (multiple process)......')
+    num_processes = 10
+    print('number of processes:', num_processes)
     start_time = time.time() 
-    nodes_array_reduced_parallel, old_to_new_dict_parallel = merge_nodes_parallel(nodes_array, to_merge, 10)
+    nodes_array_reduced_parallel, old_to_new_dict_parallel = merge_nodes_parallel(nodes_array, to_merge, num_processes)
     report_elapsed_time(start_time)  
 
     print('testing if single process version matches multi process version (reduced node table)')
@@ -555,8 +570,10 @@ if __name__ == "__main__":
 
     print('/**************************************************************/')
     print('Generating merged edge table (multi process)......')
+    num_processes = 12
+    print('number of processes:', num_processes)
     start_time = time.time() 
-    edges_array_reduced_parallel = merge_edges_parallel(edges_array, old_to_new_dict, 5)
+    edges_array_reduced_parallel = merge_edges_parallel(edges_array, old_to_new_dict, num_processes)
     report_elapsed_time(start_time)
 
     #print('testing if single process version matches multi process version (reduced edge table)')
