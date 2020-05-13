@@ -404,14 +404,14 @@ def merge_edges_parallel(edges_array, old_to_new_dict, num_processes):
     start_time = time.time()  
     edges_array_reduced = edges_array # make a copy
     node_map = np.vectorize(old_to_new_dict.get) # mapping function to map from old node ids to new node ids
-    new_source = node_map(edges_array_reduced[:,0]) # convert source from old to new
-    new_target = node_map(edges_array_reduced[:,1]) # convert target from old to new
+    new_source = node_map(edges_array_reduced[:, 0]) # convert source from old to new
+    new_target = node_map(edges_array_reduced[:, 1]) # convert target from old to new
     
     source_target_mat = np.hstack((new_source.reshape(len(new_source), 1), new_target.reshape(len(new_target), 1))) # two columns of source-target pairs
     source_target_mat.sort(axis=1)# make source always <= target
 
-    edges_array_reduced[:,0] = source_target_mat[:, 0] # put new sources in edge table
-    edges_array_reduced[:,1] = source_target_mat[:, 1] # put new targets in edge table
+    edges_array_reduced[:, 0] = source_target_mat[:, 0] # put new sources in edge table
+    edges_array_reduced[:, 1] = source_target_mat[:, 1] # put new targets in edge table
     
     # remove self-loops
     idx_to_remove =np.nonzero(edges_array_reduced[:,0]==edges_array_reduced[:,1])[0]
@@ -462,6 +462,20 @@ def merge_edges_parallel_worker_func(source_target_pairs):
     return new_edges
 
 
+def filter_edges(edges_array, th=0.05):
+    """
+    Remove edges that has q-value larger than or equal to the threshold 'th'.
+    """
+    print('filtering edges with q-value threshold 0.05...')
+    print('total number of edges:', edges_array.shape[0])
+    edges_to_remove = edges_array[:,4] >= 0.05 # boolean indicators of edges to remove
+    edges_to_remove = np.nonzero(edges_to_remove)[0] # index of edges to remove
+    print('number of edges to remove:', edges_to_remove.shape[0])
+    edges_array = np.delete(edges_array, edges_to_remove, 0) # delete edges with q-value >= 0.05
+    print('number of edges after filtering:', edges_array.shape[0])
+    return edges_array
+
+
 def report_elapsed_time(start):
     end = time.time()   
     time_elapsed = end - start
@@ -501,6 +515,14 @@ if __name__ == "__main__":
     #print(nodes_array)
     #print(edges_array)
     
+    '''
+    Remove the unimportant edges.
+    '''
+    print('/**************************************************************/')
+    start_time = time.time()
+    edges_array = filter_edges(edges_array, th=0.05)
+    report_elapsed_time(start_time)   
+
     '''
     Load patient's snp info into nodes_array.
     Node array columns become: node_id, chr, chunk_start, chunk_end, has_snp.
