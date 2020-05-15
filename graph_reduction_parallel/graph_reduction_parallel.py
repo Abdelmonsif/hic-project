@@ -449,6 +449,8 @@ def merge_edges_parallel_worker_func(source_target_pairs):
     """
     Worker function to compute a merged new edge. 
     """
+    print('     total number of new edges to compute:', len(source_target_pairs))
+    num_edges_processed = 0
     new_edges = []
     for source_target_pair in source_target_pairs:
         edges_array_reduced = np.frombuffer(shared_mem_dict['X'], dtype=np.single).reshape(shared_mem_dict['X_shape']) # declare shared memory
@@ -459,6 +461,9 @@ def merge_edges_parallel_worker_func(source_target_pairs):
         old_edges = edges_array_reduced[pair_idx] # array of corresponding old nodes 
         new_edge = np.median(old_edges, axis=0)
         new_edges.append(new_edge)
+        num_edges_processed = num_edges_processed + 1
+        if num_edges_processed%1000 == 0:
+            print('     number of new edges computed:', num_edges_processed)
     return new_edges
 
 
@@ -543,7 +548,6 @@ if __name__ == "__main__":
     nodes_array = copy_nodes_to_shared_mem(array=nodes_array, data_type='l') # signed long (32-bit)
     report_elapsed_time(start_time)   
 
-
     '''Compute the nodes to merge'''
     print('/**************************************************************/')
     print('Computing nodes to merge with single process......')
@@ -592,11 +596,13 @@ if __name__ == "__main__":
 
     print('/**************************************************************/')
     print('Generating merged edge table (multi process)......')
-    num_processes = 12
+    num_processes = 1
     print('number of processes:', num_processes)
     start_time = time.time() 
     edges_array_reduced_parallel = merge_edges_parallel(edges_array, old_to_new_dict, num_processes)
     report_elapsed_time(start_time)
+
+    print('shape of reduced edge table:', edges_array_reduced_parallel.shape)
 
     #print('testing if single process version matches multi process version (reduced edge table)')
     #edges_array_reduced = np.sort(edges_array_reduced, axis=None)

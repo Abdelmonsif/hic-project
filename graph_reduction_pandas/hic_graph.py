@@ -404,6 +404,8 @@ class HicGraph:
         if self.verbose == 1:
             print('reduced edges:')
             print(self.edges_reduced)
+
+        #print(self.edges_reduced.shape)
         self.__report_elapsed_time(start_time)
 
    
