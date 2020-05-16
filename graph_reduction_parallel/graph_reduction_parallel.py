@@ -382,6 +382,8 @@ def merge_edges(edges_array, old_to_new_dict, num_processes):
     # wrap into shared memory
     edges_array_reduced = copy_edges_to_shared_mem(array=edges_array_reduced, data_type='f') # 32-bit float
     
+    print('     total number of new edges to compute:', len(source_target_pairs))
+    num_edges_processed = 0
     new_edges = [] # list of new edges
     for source_target_pair in source_target_pairs: # parallelize this loop
         idx_source = edges_array_reduced[:,0]==source_target_pair[0]
@@ -391,6 +393,9 @@ def merge_edges(edges_array, old_to_new_dict, num_processes):
         old_edges = edges_array_reduced[pair_idx] # array of corresponding old nodes 
         new_edge = np.median(old_edges, axis=0)
         new_edges.append(new_edge)
+        num_edges_processed = num_edges_processed + 1
+        if num_edges_processed%100 == 0:
+            print('     number of new edges computed:', num_edges_processed)
     edges_array_reduced = np.vstack(new_edges) # put the new edges in one numpy array
     #print(edges_array_reduced.shape)
     return edges_array_reduced
@@ -549,11 +554,11 @@ if __name__ == "__main__":
     report_elapsed_time(start_time)   
 
     '''Compute the nodes to merge'''
-    print('/**************************************************************/')
-    print('Computing nodes to merge with single process......')
-    start_time = time.time()    
-    to_merge = compute_nodes_to_merge(nodes_array)
-    report_elapsed_time(start_time)   
+    #print('/**************************************************************/')
+    #print('Computing nodes to merge with single process......')
+    #start_time = time.time()    
+    #to_merge = compute_nodes_to_merge(nodes_array)
+    #report_elapsed_time(start_time)   
     
     print('/**************************************************************/')
     print('Computing nodes to merge with multiple process......')
@@ -561,48 +566,45 @@ if __name__ == "__main__":
     to_merge_parallel = compute_nodes_to_merge_parallel(nodes_array=nodes_array, num_processes=20)
     report_elapsed_time(start_time)   
     
-    print('testing if single process version matches multi process version:')
-    print(to_merge.sort()==to_merge_parallel.sort())
+    #print('testing if single process version matches multi process version:')
+    #print(to_merge.sort()==to_merge_parallel.sort())
 
-    print('/**************************************************************/')
-    print('Generating merged node table (single process)......')
-    start_time = time.time() 
-    nodes_array_reduced, old_to_new_dict = merge_nodes(nodes_array, to_merge, 10)
-    report_elapsed_time(start_time)  
+    #print('/**************************************************************/')
+    #print('Generating merged node table (single process)......')
+    #start_time = time.time() 
+    #nodes_array_reduced, old_to_new_dict = merge_nodes(nodes_array, to_merge, 10)
+    #report_elapsed_time(start_time)  
 
     print('/**************************************************************/')
     print('Generating merged node table (multiple process)......')
     num_processes = 10
     print('number of processes:', num_processes)
     start_time = time.time() 
-    nodes_array_reduced_parallel, old_to_new_dict_parallel = merge_nodes_parallel(nodes_array, to_merge, num_processes)
+    nodes_array_reduced_parallel, old_to_new_dict_parallel = merge_nodes_parallel(nodes_array, to_merge_parallel, num_processes)
     report_elapsed_time(start_time)  
 
-    print('testing if single process version matches multi process version (reduced node table)')
-    nodes_array_reduced = nodes_array_reduced[nodes_array_reduced[:,0].argsort()]
-    nodes_array_reduced_parallel = nodes_array_reduced_parallel[nodes_array_reduced_parallel[:,0].argsort()]
-    print(np.array_equal(nodes_array_reduced, nodes_array_reduced_parallel))
-    #print(nodes_array_reduced)
-    #print(nodes_array_reduced_parallel)
-
-    print('testing if single process version matches multi process version (old to new node dictionary)')
-    print(old_to_new_dict == old_to_new_dict_parallel)
-
-    #print('/**************************************************************/')
-    #print('Generating merged edge table (single process)......')
-    #start_time = time.time() 
-    #edges_array_reduced = merge_edges(edges_array, old_to_new_dict, 10)
-    #report_elapsed_time(start_time)
+    #print('testing if single process version matches multi process version (reduced node table)')
+    #nodes_array_reduced = nodes_array_reduced[nodes_array_reduced[:,0].argsort()]
+    #nodes_array_reduced_parallel = nodes_array_reduced_parallel[nodes_array_reduced_parallel[:,0].argsort()]
+    #print(np.array_equal(nodes_array_reduced, nodes_array_reduced_parallel))
+    
+    #print('testing if single process version matches multi process version (old to new node dictionary)')
+    #print(old_to_new_dict == old_to_new_dict_parallel)
 
     print('/**************************************************************/')
-    print('Generating merged edge table (multi process)......')
-    num_processes = 1
-    print('number of processes:', num_processes)
+    print('Generating merged edge table (single process)......')
     start_time = time.time() 
-    edges_array_reduced_parallel = merge_edges_parallel(edges_array, old_to_new_dict, num_processes)
+    edges_array_reduced = merge_edges(edges_array, old_to_new_dict_parallel, 10)
     report_elapsed_time(start_time)
 
-    print('shape of reduced edge table:', edges_array_reduced_parallel.shape)
+    #print('/**************************************************************/')
+    #print('Generating merged edge table (multi process)......')
+    #num_processes = 1
+    #print('number of processes:', num_processes)
+    #start_time = time.time() 
+    #edges_array_reduced_parallel = merge_edges_parallel(edges_array, old_to_new_dict, num_processes)
+    #report_elapsed_time(start_time)
+    #print('shape of reduced edge table:', edges_array_reduced_parallel.shape)
 
     #print('testing if single process version matches multi process version (reduced edge table)')
     #edges_array_reduced = np.sort(edges_array_reduced, axis=None)
