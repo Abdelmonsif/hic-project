@@ -471,6 +471,8 @@ def merge_edges_parallel_worker_func(source_target_pairs):
         num_edges_processed = num_edges_processed + 1
         if num_edges_processed%100 == 0:
             print('     number of new edges computed:', num_edges_processed)
+        if num_edges_processed == 3000:
+            break
     return new_edges
 
 
@@ -605,7 +607,7 @@ if __name__ == "__main__":
     num_processes = 4
     print('number of processes:', num_processes)
     start_time = time.time() 
-    edges_array_reduced_parallel = merge_edges_parallel(edges_array, old_to_new_dict, num_processes)
+    edges_array_reduced_parallel = merge_edges_parallel(edges_array, old_to_new_dict_parallel, num_processes)
     report_elapsed_time(start_time)
     print('shape of reduced edge table:', edges_array_reduced_parallel.shape)
 
