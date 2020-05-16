@@ -396,6 +396,8 @@ def merge_edges(edges_array, old_to_new_dict, num_processes):
         num_edges_processed = num_edges_processed + 1
         if num_edges_processed%100 == 0:
             print('     number of new edges computed:', num_edges_processed)
+        if num_edges_processed == 3000:
+            break
     edges_array_reduced = np.vstack(new_edges) # put the new edges in one numpy array
     #print(edges_array_reduced.shape)
     return edges_array_reduced
@@ -581,7 +583,8 @@ if __name__ == "__main__":
     print('number of processes:', num_processes)
     start_time = time.time() 
     nodes_array_reduced_parallel, old_to_new_dict_parallel = merge_nodes_parallel(nodes_array, to_merge_parallel, num_processes)
-    report_elapsed_time(start_time)  
+    report_elapsed_time(start_time) 
+    print('number of new nodes:', nodes_array_reduced_parallel.shape[0]) 
 
     #print('testing if single process version matches multi process version (reduced node table)')
     #nodes_array_reduced = nodes_array_reduced[nodes_array_reduced[:,0].argsort()]
