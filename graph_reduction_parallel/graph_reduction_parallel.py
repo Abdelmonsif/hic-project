@@ -469,7 +469,7 @@ def merge_edges_parallel_worker_func(source_target_pairs):
         new_edge = np.median(old_edges, axis=0)
         new_edges.append(new_edge)
         num_edges_processed = num_edges_processed + 1
-        if num_edges_processed%1000 == 0:
+        if num_edges_processed%100 == 0:
             print('     number of new edges computed:', num_edges_processed)
     return new_edges
 
@@ -594,20 +594,20 @@ if __name__ == "__main__":
     #print('testing if single process version matches multi process version (old to new node dictionary)')
     #print(old_to_new_dict == old_to_new_dict_parallel)
 
-    print('/**************************************************************/')
-    print('Generating merged edge table (single process)......')
-    start_time = time.time() 
-    edges_array_reduced = merge_edges(edges_array, old_to_new_dict_parallel, 10)
-    report_elapsed_time(start_time)
-
     #print('/**************************************************************/')
-    #print('Generating merged edge table (multi process)......')
-    #num_processes = 1
-    #print('number of processes:', num_processes)
+    #print('Generating merged edge table (single process)......')
     #start_time = time.time() 
-    #edges_array_reduced_parallel = merge_edges_parallel(edges_array, old_to_new_dict, num_processes)
+    #edges_array_reduced = merge_edges(edges_array, old_to_new_dict_parallel, 10)
     #report_elapsed_time(start_time)
-    #print('shape of reduced edge table:', edges_array_reduced_parallel.shape)
+
+    print('/**************************************************************/')
+    print('Generating merged edge table (multi process)......')
+    num_processes = 4
+    print('number of processes:', num_processes)
+    start_time = time.time() 
+    edges_array_reduced_parallel = merge_edges_parallel(edges_array, old_to_new_dict, num_processes)
+    report_elapsed_time(start_time)
+    print('shape of reduced edge table:', edges_array_reduced_parallel.shape)
 
     #print('testing if single process version matches multi process version (reduced edge table)')
     #edges_array_reduced = np.sort(edges_array_reduced, axis=None)
