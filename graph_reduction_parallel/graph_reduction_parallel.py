@@ -37,6 +37,11 @@ def get_args():
                         required=False,
                         help='location of the patient file.') 
 
+    parser.add_argument('-snp_weight_dir',
+                        default='../../snp_weight/PRS_SNPs',
+                        required=False,
+                        help='csv file containing weights of snps') 
+
     parser.add_argument('-verbose',
                         default=0,
                         required=False,
@@ -120,7 +125,7 @@ def load_node(node_dir):
     return nodes
 
 
-def load_patient(nodes_array, patient_dir, snp_map, node_id_set):
+def load_patient(nodes_array, patient_dir, snp_map, node_id_set, snp_weight_dir, snp_weight_th=0.00016):
     """
     Load the csv file containing SNPs of a patient, then add the locations of 
     SNPs to the nodes dataframe.
@@ -128,12 +133,27 @@ def load_patient(nodes_array, patient_dir, snp_map, node_id_set):
     if nodes_array.shape[1] == 5:
         nodes_array = np.delete(nodes_array, 4, 1) # remove last patient's data if not first patients
     nodes_array = np.insert(nodes_array, 4, 0, axis=1) # add a column to indicate presence of SNPs
+
+    '''filter the snps according to weights'''
     patient_snp = pd.read_csv(patient_dir, sep='	') # load patient SNPs as a dataframe
+    snp_weights = pd.read_csv(snp_weight_dir, delim_whitespace=True)
+    snp_weights = dict(zip(snp_weights.SNP, snp_weights.SNP_weight)) # convert to dictionary
     snp_cols = [] # list containing all the SNPs of the patient
     snp_cols_1 = patient_snp.columns[(patient_snp == 1).iloc[0]].tolist()
     snp_cols_2 = patient_snp.columns[(patient_snp == 2).iloc[0]].tolist()
     snp_cols.extend(snp_cols_1)
     snp_cols.extend(snp_cols_2)
+    print('number of snps before weight filtering: ', len(snp_cols))
+    for snp in snp_cols: # remove the snp if the absolute value of its weight is less than threshold
+        try:
+            #if abs(snp_weights.loc[snp, 'SNP_weight']) <= snp_weight_th:
+            if abs(snp_weights[snp]) <= snp_weight_th:
+                snp_cols.remove(snp)
+        except:
+            snp_cols.remove(snp) # simply remove the snp if it's not in weight table (treat as 0 weight).
+    print('number of snps after weight filtering: ', len(snp_cols))
+
+    '''find loactions of the snps according to patient info'''
     snp_locations = [] # find the locations (node ids) of the snps
     num_missing_snp = 0 # number of missing snp for this patient, ignore them
     for snp in snp_cols:
@@ -508,6 +528,7 @@ if __name__ == "__main__":
     node_dir = args.node_dir
     snps_dir = args.snps_dir
     patient_dir = args.patient_dir
+    snp_weight_dir = args.snp_weight_dir
     verbose = int(args.verbose)
     reduced_node_dir = args.reduced_node_dir
     reduced_edge_dir = args.reduced_edge_dir
@@ -544,7 +565,7 @@ if __name__ == "__main__":
     print('/**************************************************************/')
     print('Loading patient info and add to graph......')
     start_time = time.time()
-    nodes_array = load_patient(nodes_array, patient_dir, snp_map, node_id_set)
+    nodes_array = load_patient(nodes_array, patient_dir, snp_map, node_id_set, snp_weight_dir, snp_weight_th=0.00016)
     report_elapsed_time(start_time)    
 
     '''
