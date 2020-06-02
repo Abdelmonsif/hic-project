@@ -1,8 +1,8 @@
 #!/bin/bash
 #PBS -q workq
 #PBS -l nodes=1:ppn=20
-#PBS -l walltime=12:00:00
-#PBS -N graph_redu_516
+#PBS -l walltime=72:00:00
+#PBS -N chr_redu
 #PBS -A hpc_michal01
 #PBS -j oe
 
