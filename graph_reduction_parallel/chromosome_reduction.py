@@ -1,11 +1,78 @@
 """
 Each chromosome is treated as a single graph, and they are reduced seperatedly.
 """
+import argparse
 import numpy as np
-from graph_reduction_parallel import get_args
 from graph_reduction_parallel import load_graph
 from graph_reduction_parallel import filter_edges
 from graph_reduction_parallel import load_patient
+import sys
+
+def get_args():
+    parser = argparse.ArgumentParser('python')
+
+    parser.add_argument('-edge_dir',
+                        #default='../../processed_main_graph/final_edge.h5',
+                        default='../../test_data/test_1.h5',
+                        required=False,
+                        help='directory of output edge file.')  
+
+    parser.add_argument('-node_dir',
+                        #default='../../processed_main_graph/final_node.csv',
+                        default='../../test_data/test_1.csv',
+                        required=False,
+                        help='directory of output edge file.')  
+
+    parser.add_argument('-snps_dir',
+                        default='../../snp_map/snp_map.json',
+                        required=False,
+                        help='location of the snp mapping file.') 
+
+    parser.add_argument('-patient_dir',
+                        default='../../patients/BCAC-97446542.csv',
+                        required=False,
+                        help='location of the patient file.') 
+
+    parser.add_argument('-snp_weight_dir',
+                        default='../../snp_weight/PRS_SNPs',
+                        required=False,
+                        help='csv file containing weights of snps') 
+
+    parser.add_argument('-verbose',
+                        default=0,
+                        required=False,
+                        help='set to 1 for debugging.')
+
+    parser.add_argument('-reduced_node_dir',
+                        #default='../../patients_reduced/BCAC-97446542-node.csv',
+                        default='../../test_data_reduced/reduced_node_test_1_4.csv',
+                        required=False,
+                        help='csv file of reduced node table.') 
+
+    parser.add_argument('-reduced_edge_dir',
+                        #default='../../patients_reduced/BCAC-97446542-edge.csv',
+                        default='../../test_data_reduced/reduced_edge_test_1_4.csv',
+                        required=False,
+                        help='csv file of reduced node table.') 
+
+    parser.add_argument('-reduced_gexf_dir',
+                        #default='../../patients_reduced/BCAC-97446542.gexf',
+                        default='../../test_data_reduced/reduced_gexf_test_1_4.csv',
+                        required=False,
+                        help='csv file of reduced node table.') 
+
+    parser.add_argument('-reduced_graph_statistics',
+                        #default='../../patients_reduced/BCAC-97446542-statistics.json',
+                        default='../../test_data_reduced/reduced_gexf_statistics_test_1_4.csv',
+                        required=False,
+                        help='csv file of reduced node table.') 
+
+    parser.add_argument('-chr',
+                        default=10,
+                        required=False,
+                        help='which chromosome to compute')       
+
+    return parser.parse_args()
 
 
 def merge_chr_nodes(nodes_array, chr):
@@ -99,45 +166,37 @@ if __name__ == "__main__":
     reduced_edge_dir = args.reduced_edge_dir
     reduced_gexf_dir = args.reduced_gexf_dir
     reduced_graph_statistics = args.reduced_graph_statistics
+    chr = int(args.chr)
+
+    np.set_printoptions(threshold=sys.maxsize)
+
+    print('computing info for chromosome {}'.format(chr))
 
     nodes_array, edges_array, snp_map, node_id_set = load_graph(node_dir, edge_dir, snps_dir)
     
-    edges_array = filter_edges(edges_array, th=0.05) # filter out unimportant edges
-
     nodes_array = load_patient(nodes_array, patient_dir, snp_map, node_id_set, snp_weight_dir, snp_weight_th=0.00016)
-    
-    total_merged_nodes = 0
-    for chr in range(1,24):
-        print('-----------------------------------------------------------------') 
-        print('computing merged nodes of chromosome {}'.format(chr))
-        print('number of nodes before merging:', nodes_array[nodes_array[:,1]==chr, :].shape[0])
-        
-        new_nodes, old_to_new_dict, new_to_old_dict = merge_chr_nodes(nodes_array, chr)
-        print('number of nodes after merging:', new_nodes.shape[0])
-        total_merged_nodes += new_nodes.shape[0]
-        
-        old_nodes_set = find_node_set(nodes_array, chr) # set of original nodes of this chromosome
+    #print(nodes_array)
 
-        num_inter_chr_nodes = 0 # number of inter-chromosome nodes
-        for new_node in new_nodes: 
-            old_nodes = new_to_old_dict[new_node[0]] # map to corresponding old nodes
+    edges_array = filter_edges(edges_array, th=0.05) # filter out unimportant edges
+    #print(edges_array)
 
-            try: # if old_nodes is list
-                for old_node in old_nodes:
-                    idx_source = edges_array[:,0]==old_node # find edges that connected to the original node as source
-                    idx_target = edges_array[:,1]==old_node # find edges that connected to the original node as target
-                    idx = idx_source | idx_target    
-                    idx = np.nonzero(idx)[0] # indexes of rows
-                    old_edges = edges_array[idx] # array of corresponding old nodes 
-                    old_edges_source = set(old_edges[:,0]) # sources of old edges
-                    old_edges_target = set(old_edges[:,1]) # targets of old edges
-                    old_edges_nodes = set.union(old_edges_source, old_edges_target) # set of nodes (old nodes of this chromosome and other nodes connected with them)
-                    if not old_edges_nodes.issubset(old_nodes_set): # some node is connected to other chromosome
-                        num_inter_chr_nodes += 1
-                        break
-            except: # if not a list 
-                idx_source = edges_array[:,0]==old_nodes # find edges that connected to the original node as source
-                idx_target = edges_array[:,1]==old_nodes # find edges that connected to the original node as target
+    print('-----------------------------------------------------------------') 
+    print('computing merged nodes of chromosome {}'.format(chr))
+    print('number of nodes before merging:', nodes_array[nodes_array[:,1]==chr, :].shape[0])
+    old_nodes_set = find_node_set(nodes_array, chr) # set of original nodes of this chromosome        
+    #print('set of old nodes: ', old_nodes_set)
+
+    new_nodes, old_to_new_dict, new_to_old_dict = merge_chr_nodes(nodes_array, chr)
+    print('number of nodes after merging:', new_nodes.shape[0])
+    num_merged_nodes = new_nodes.shape[0]
+        
+    num_inter_chr_nodes = 0 # number of inter-chromosome nodes
+    for new_node in new_nodes: 
+        old_nodes = new_to_old_dict[new_node[0]] # map to corresponding old nodes
+        try: # if old_nodes is list
+            for old_node in old_nodes:
+                idx_source = edges_array[:,0]==old_node # find edges that connected to the original node as source
+                idx_target = edges_array[:,1]==old_node # find edges that connected to the original node as target
                 idx = idx_source | idx_target    
                 idx = np.nonzero(idx)[0] # indexes of rows
                 old_edges = edges_array[idx] # array of corresponding old nodes 
@@ -146,9 +205,21 @@ if __name__ == "__main__":
                 old_edges_nodes = set.union(old_edges_source, old_edges_target) # set of nodes (old nodes of this chromosome and other nodes connected with them)
                 if not old_edges_nodes.issubset(old_nodes_set): # some node is connected to other chromosome
                     num_inter_chr_nodes += 1
-        print('number of inter chromosome nodes: ', num_inter_chr_nodes)
+                    break
+        except: # if not a list 
+            idx_source = edges_array[:,0]==old_nodes # find edges that connected to the original node as source
+            idx_target = edges_array[:,1]==old_nodes # find edges that connected to the original node as target
+            idx = idx_source | idx_target    
+            idx = np.nonzero(idx)[0] # indexes of rows
+            old_edges = edges_array[idx] # array of corresponding old nodes 
+            old_edges_source = set(old_edges[:,0]) # sources of old edges
+            old_edges_target = set(old_edges[:,1]) # targets of old edges
+            old_edges_nodes = set.union(old_edges_source, old_edges_target) # set of nodes (old nodes of this chromosome and other nodes connected with them)
+            if not old_edges_nodes.issubset(old_nodes_set): # some node is connected to other chromosome
+                num_inter_chr_nodes += 1
+    print('number of inter chromosome nodes: ', num_inter_chr_nodes)
     print('-----------------------------------------------------------------')         
-    print('total number of merged nodes of the patient:', total_merged_nodes)
+    print('total number of merged nodes of the patient:', num_merged_nodes)
 
 
 

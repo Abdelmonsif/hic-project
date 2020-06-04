@@ -502,7 +502,7 @@ def filter_edges(edges_array, th=0.05):
     """
     print('filtering edges with q-value threshold 0.05...')
     print('total number of edges:', edges_array.shape[0])
-    edges_to_remove = edges_array[:,4] >= 0.05 # boolean indicators of edges to remove
+    edges_to_remove = np.exp(-1 * edges_array[:,4]) >= 0.05 # boolean indicators of edges to remove
     edges_to_remove = np.nonzero(edges_to_remove)[0] # index of edges to remove
     print('number of edges to remove:', edges_to_remove.shape[0])
     edges_array = np.delete(edges_array, edges_to_remove, 0) # delete edges with q-value >= 0.05
