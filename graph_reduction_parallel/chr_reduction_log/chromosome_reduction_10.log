@@ -1,0 +1,14 @@
+computing info for chromosome 10
+number of snps before weight filtering:  123312
+number of snps after weight filtering:  77819
+filtering edges with q-value threshold 0.05...
+total number of edges: 134879258
+number of edges to remove: 129137252
+number of edges after filtering: 5742006
+-----------------------------------------------------------------
+computing merged nodes of chromosome 10
+number of nodes before merging: 25798
+number of nodes after merging: 7495
+number of inter chromosome nodes:  6741
+-----------------------------------------------------------------
+total number of merged nodes of the patient: 7495
