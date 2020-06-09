@@ -416,10 +416,9 @@ def merge_edges(edges_array, old_to_new_dict, num_processes):
         num_edges_processed = num_edges_processed + 1
         if num_edges_processed%100 == 0:
             print('     number of new edges computed:', num_edges_processed)
-        if num_edges_processed == 3000:
-            break
+        #if num_edges_processed == 3000:
+        #    break
     edges_array_reduced = np.vstack(new_edges) # put the new edges in one numpy array
-    #print(edges_array_reduced.shape)
     return edges_array_reduced
 
 

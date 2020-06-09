@@ -234,6 +234,8 @@ def chr_export_to_gexf(nodes_array, edges_array, reduced_chr_dir, chr, patient_d
     edge_list = list(zip(edges_array[:,0], edges_array[:,1])) # pairs of source and target as list of tuples
     reduced_graph.add_edges_from(edge_list) # add edges to graph
 
+    nx.write_gexf(reduced_graph, gexf_path) # export the reduced graph as gexf file.
+
     '''
     node_attr = self.nodes_reduced.to_dict('index') # make node dictionary 
     nx.set_node_attributes(reduced_graph, node_attr) # add node dictionary as node attributes
@@ -246,7 +248,6 @@ def chr_export_to_gexf(nodes_array, edges_array, reduced_chr_dir, chr, patient_d
     edge_attr = self.edges_reduced.to_dict('index') # make dictionary of edge attributes    
     nx.set_edge_attributes(reduced_graph, edge_attr)
     
-    nx.write_gexf(reduced_graph, reduced_gexf_dir) # export the reduced graph as gexf file.
     '''
 
 
