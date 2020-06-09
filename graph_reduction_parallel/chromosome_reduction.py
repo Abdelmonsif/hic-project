@@ -6,6 +6,7 @@ import numpy as np
 from graph_reduction_parallel import load_graph
 from graph_reduction_parallel import filter_edges
 from graph_reduction_parallel import load_patient
+from graph_reduction_parallel import merge_edges
 import sys
 
 def get_args():
@@ -187,6 +188,21 @@ def count_num_inter_chr_nodes(new_nodes, edges_array, new_to_old_dict, old_nodes
     return num_inter_chr_nodes
 
 
+def compute_intra_chr_edges(edges_array, old_nodes_set):
+    """
+    Return the edges that both ends are inside a single chromosome (intra-chromosome edges of a paticular chromosome).
+    
+    Arguments:
+    edges_array: a numpy array which contains all the edges.
+    old_nodes_set: a set of node IDs which belongs to a single chromosome.
+
+    Returns: edge table that contains only intra-chromsome edges
+    """
+    intra_chr_edges = [row for row in edges_array if row[0] in old_nodes_set and row[1] in old_nodes_set]
+    intra_chr_edges = np.vstack(intra_chr_edges)
+    return intra_chr_edges
+
+
 if __name__ == "__main__":
     '''options and input arguments'''
     args = get_args()
@@ -227,7 +243,20 @@ if __name__ == "__main__":
         
     num_inter_chr_nodes = count_num_inter_chr_nodes(new_nodes, edges_array, new_to_old_dict, old_nodes_set)
     print('number of inter chromosome nodes: ', num_inter_chr_nodes)
-    print('-----------------------------------------------------------------')         
+
+    print('-----------------------------------------------------------------')    
+    intra_chr_edges = compute_intra_chr_edges(edges_array, old_nodes_set)
+    print('number of intra chromosome edges before merging:', intra_chr_edges.shape[0])
+
+    print('computing the merged edges...')
+    new_edges = merge_edges(edges_array = intra_chr_edges, old_to_new_dict = old_to_new_dict, num_processes=1)
+    print('number of new edges after merging:', new_edges.shape[0])
+
+    
+
+
+
+     
 
 
 
