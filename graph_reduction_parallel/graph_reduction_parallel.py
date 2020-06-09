@@ -143,7 +143,7 @@ def load_patient(nodes_array, patient_dir, snp_map, node_id_set, snp_weight_dir,
     snp_cols_2 = patient_snp.columns[(patient_snp == 2).iloc[0]].tolist()
     snp_cols.extend(snp_cols_1)
     snp_cols.extend(snp_cols_2)
-    print('number of snps before weight filtering: ', len(snp_cols))
+    print('total number of snps (all 23 of the patient) before weight filtering: ', len(snp_cols))
     for snp in snp_cols: # remove the snp if the absolute value of its weight is less than threshold
         try:
             #if abs(snp_weights.loc[snp, 'SNP_weight']) <= snp_weight_th:
@@ -151,7 +151,7 @@ def load_patient(nodes_array, patient_dir, snp_map, node_id_set, snp_weight_dir,
                 snp_cols.remove(snp)
         except:
             snp_cols.remove(snp) # simply remove the snp if it's not in weight table (treat as 0 weight).
-    print('number of snps after weight filtering: ', len(snp_cols))
+    print('total number of snps (all 23 of the patient) after weight filtering: ', len(snp_cols))
 
     '''find loactions of the snps according to patient info'''
     snp_locations = [] # find the locations (node ids) of the snps
@@ -501,12 +501,12 @@ def filter_edges(edges_array, th=0.05):
     Remove edges that has q-value larger than or equal to the threshold 'th'.
     """
     print('filtering edges with q-value threshold 0.05...')
-    print('total number of edges:', edges_array.shape[0])
+    print('total number of edges before filtering:', edges_array.shape[0])
     edges_to_remove = np.exp(-1 * edges_array[:,4]) >= 0.05 # boolean indicators of edges to remove
     edges_to_remove = np.nonzero(edges_to_remove)[0] # index of edges to remove
     print('number of edges to remove:', edges_to_remove.shape[0])
     edges_array = np.delete(edges_array, edges_to_remove, 0) # delete edges with q-value >= 0.05
-    print('number of edges after filtering:', edges_array.shape[0])
+    print('total number of edges after filtering:', edges_array.shape[0])
     return edges_array
 
 
