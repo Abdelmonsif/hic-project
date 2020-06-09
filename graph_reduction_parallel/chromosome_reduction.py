@@ -8,6 +8,8 @@ from graph_reduction_parallel import filter_edges
 from graph_reduction_parallel import load_patient
 from graph_reduction_parallel import merge_edges
 import sys
+import networkx as nx
+
 
 def get_args():
     parser = argparse.ArgumentParser('python')
@@ -56,9 +58,9 @@ def get_args():
                         required=False,
                         help='csv file of reduced node table.') 
 
-    parser.add_argument('-reduced_gexf_dir',
+    parser.add_argument('-reduced_chr_dir',
                         #default='../../patients_reduced/BCAC-97446542.gexf',
-                        default='../../test_data_reduced/reduced_gexf_test_1_4.csv',
+                        default='../../chr_data_reduced/',
                         required=False,
                         help='csv file of reduced node table.') 
 
@@ -203,6 +205,51 @@ def compute_intra_chr_edges(edges_array, old_nodes_set):
     return intra_chr_edges
 
 
+def chr_export_to_gexf(nodes_array, edges_array, reduced_chr_dir, chr, patient_dir):
+    """
+    Export the reduced chromosome to a gexf file.
+
+    Arguments:
+    nodes_array: node table
+    edges_array: edge table
+    reduced_chr_dir: whre you want to store the output graph
+    chr: chromosome number (1-23)
+    patient_dir: directory of patient, used to get the code of patient as part of output file name.
+    """
+    #print(nodes_array)
+    #print(edges_array)
+
+    patient_code = patient_dir.split('/')[-1]
+    patient_code = patient_code.split('.')[0]
+    gexf_path = reduced_chr_dir + 'chr' + str(chr) + '-' + patient_code + '.gexf'
+    print('saving reduced chromsome in:', gexf_path)
+
+    reduced_graph = nx.Graph() # initiate empty graph
+
+    '''nodes'''
+    node_list = list(nodes_array[:,0]) # node list
+    reduced_graph.add_nodes_from(node_list) # add nodes to graph
+
+    '''edges'''
+    edge_list = list(zip(edges_array[:,0], edges_array[:,1])) # pairs of source and target as list of tuples
+    reduced_graph.add_edges_from(edge_list) # add edges to graph
+
+    '''
+    node_attr = self.nodes_reduced.to_dict('index') # make node dictionary 
+    nx.set_node_attributes(reduced_graph, node_attr) # add node dictionary as node attributes
+    
+    # edges
+    self.edges_reduced['edge_names'] = list(zip(self.edges_reduced.source, self.edges_reduced.target)) # add reduced edge list to reduced edge table
+    self.edges_reduced.drop(columns=['source', 'target'], inplace=True)# drop source and target column
+    reduced_graph.add_edges_from(list(self.edges_reduced['edge_names'])) # add edges to graph
+    self.edges_reduced.set_index('edge_names', inplace=True)# make new edge names index
+    edge_attr = self.edges_reduced.to_dict('index') # make dictionary of edge attributes    
+    nx.set_edge_attributes(reduced_graph, edge_attr)
+    
+    nx.write_gexf(reduced_graph, reduced_gexf_dir) # export the reduced graph as gexf file.
+    '''
+
+
 if __name__ == "__main__":
     '''options and input arguments'''
     args = get_args()
@@ -214,7 +261,7 @@ if __name__ == "__main__":
     verbose = int(args.verbose)
     reduced_node_dir = args.reduced_node_dir
     reduced_edge_dir = args.reduced_edge_dir
-    reduced_gexf_dir = args.reduced_gexf_dir
+    reduced_chr_dir = args.reduced_chr_dir
     reduced_graph_statistics = args.reduced_graph_statistics
     chr = int(args.chr)
 
@@ -251,6 +298,8 @@ if __name__ == "__main__":
     print('computing the merged edges...')
     new_edges = merge_edges(edges_array = intra_chr_edges, old_to_new_dict = old_to_new_dict, num_processes=1)
     print('number of new edges after merging:', new_edges.shape[0])
+
+    chr_export_to_gexf(nodes_array, edges_array, reduced_chr_dir, chr, patient_dir)
 
     
 
