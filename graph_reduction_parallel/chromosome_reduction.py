@@ -81,8 +81,12 @@ def get_args():
 def merge_chr_nodes(nodes_array, chr):
     """
     Merge the nodes of a single chromosome. 
-    nodes_array: numpy array containing all nodes of the patient.
+    nodes_array: numpy array containing all nodes of the patient. It has the following columns:
+        [node-id, chromosome, chunk_start, chunk_end, has_snp]
     chr: chromosome number.
+    
+    A new column 'new_merged' will be added in the merging process. 0 indicates an old node while 1
+    indicates a new merged node.
     """
     '''compute nodes to merge for this chromosome'''
     to_merge = []
@@ -109,7 +113,8 @@ def merge_chr_nodes(nodes_array, chr):
             idx_to_remove.append(idx[0].item())
     idx_to_remove = np.array(idx_to_remove)
     nodes_array_copy = np.delete(nodes_array_copy, idx_to_remove, 0) # delete the nodes to merge
-        
+    nodes_array_copy = np.hstack([nodes_array_copy, np.zeros([nodes_array_copy.shape[0], 1]).astype(int)]) # add a column of zeros for 'new_merged' feature
+
     unchanged_nodes = list(nodes_array_copy[:,0]) # keys also contents for unchanged nodes
     old_to_new_dict_total = dict(zip(unchanged_nodes, unchanged_nodes)) # update the dictionary for edge reduction
     new_to_old_dict_total = dict(zip(unchanged_nodes, unchanged_nodes)) # same for unchanged nodes
@@ -128,7 +133,7 @@ def merge_chr_nodes(nodes_array, chr):
             chunk_end = np.amax(nodes_array_sub[:, 3])# chunk_end of new node
             for node in nodes: # update the old to new node dictionary
                 old_to_new_dict[node] = new_node_id
-            new_nodes.append(np.array([new_node_id, chromosome, chunk_start, chunk_end, 0]))
+            new_nodes.append(np.array([new_node_id, chromosome, chunk_start, chunk_end, 0, 1]))
             new_to_old_dict_total[new_node_id] = nodes
             #print(new_to_old_dict_total)
             #print(nodes)
@@ -284,6 +289,7 @@ if __name__ == "__main__":
     old_nodes_set = find_node_set(nodes_array, chr) # set of original nodes of this chromosome        
     #print('set of old nodes: ', old_nodes_set)
 
+    '''[node-id, chromosome, chunk_start, chunk_end, has_snp, new_merged]'''
     new_nodes, old_to_new_dict, new_to_old_dict = merge_chr_nodes(nodes_array, chr)
     print('number of nodes after merging:', new_nodes.shape[0])
     num_merged_nodes = new_nodes.shape[0]
