@@ -231,7 +231,7 @@ def chr_export_to_gexf(nodes_array, edges_array, reduced_chr_dir, chr, patient_d
     reduced_graph.add_nodes_from(node_list) # add nodes to graph
 
     '''edges'''
-    edge_list = list(zip(edges_array[:,0], edges_array[:,1])) # pairs of source and target as list of tuples
+    edge_list = list(zip(edges_array[:,0].astype(int), edges_array[:,1].astype(int))) # pairs of source and target as list of tuples
     reduced_graph.add_edges_from(edge_list) # add edges to graph
 
     nx.write_gexf(reduced_graph, gexf_path) # export the reduced graph as gexf file.
