@@ -167,6 +167,8 @@ def count_num_inter_chr_nodes(new_nodes, edges_array, new_to_old_dict, old_nodes
     Count number of inter-chromosome nodes for each chromosome.
     """
     num_inter_chr_nodes = 0 # number of inter-chromosome nodes
+    new_nodes = np.hstack([new_nodes, np.zeros([new_nodes.shape[0], 1]).astype(int)]) # add a column that indicates whether this node is connected to other chromosomes
+    i = 0 # used for indexing of rows
     for new_node in new_nodes: 
         old_nodes = new_to_old_dict[new_node[0]] # map to corresponding old nodes
         try: # if old_nodes is list
@@ -181,6 +183,7 @@ def count_num_inter_chr_nodes(new_nodes, edges_array, new_to_old_dict, old_nodes
                 old_edges_nodes = set.union(old_edges_source, old_edges_target) # set of nodes (old nodes of this chromosome and other nodes connected with them)
                 if not old_edges_nodes.issubset(old_nodes_set): # some node is connected to other chromosome
                     num_inter_chr_nodes += 1
+                    new_nodes[i, 6] = 1
                     break
         except: # if not a list 
             idx_source = edges_array[:,0]==old_nodes # find edges that connected to the original node as source
@@ -193,7 +196,10 @@ def count_num_inter_chr_nodes(new_nodes, edges_array, new_to_old_dict, old_nodes
             old_edges_nodes = set.union(old_edges_source, old_edges_target) # set of nodes (old nodes of this chromosome and other nodes connected with them)
             if not old_edges_nodes.issubset(old_nodes_set): # some node is connected to other chromosome
                 num_inter_chr_nodes += 1
-    return num_inter_chr_nodes
+                new_nodes[i, 6] = 1
+        i += 1 
+    assert(num_inter_chr_nodes==np.count_nonzero(new_nodes[:,6]==1))
+    return num_inter_chr_nodes, new_nodes
 
 
 def compute_intra_chr_edges(edges_array, old_nodes_set):
@@ -237,13 +243,10 @@ def chr_export_to_gexf(nodes_array, edges_array, reduced_chr_dir, chr, patient_d
     reduced_graph.add_nodes_from(node_list) # add nodes to graph
 
     '''node attributes'''
-    print(nodes_array)
-    nodes_array_df = pd.DataFrame(data=nodes_array, columns=['node-id', 'chromosome', 'chunk_start', 'chunk_end', 'has_snp', 'new_merged'])
-    nodes_array_df = nodes_array_df[['node-id', 'has_snp', 'new_merged']]
+    nodes_array_df = pd.DataFrame(data=nodes_array, columns=['node-id', 'chromosome', 'chunk_start', 'chunk_end', 'has_snp', 'new_merged', 'inter_chr'])
+    nodes_array_df = nodes_array_df[['node-id', 'chunk_start', 'chunk_end', 'has_snp', 'new_merged', 'inter_chr']]
     nodes_array_df = nodes_array_df.set_index('node-id')
-    print(nodes_array_df)
     node_attr = nodes_array_df.to_dict('index') # make node dictionary 
-    print(node_attr)
     nx.set_node_attributes(reduced_graph, node_attr) # add node dictionary as node attributes
     
     '''edges'''
@@ -297,13 +300,14 @@ if __name__ == "__main__":
     old_nodes_set = find_node_set(nodes_array, chr) # set of original nodes of this chromosome        
     #print('set of old nodes: ', old_nodes_set)
 
-    '''[node-id, chromosome, chunk_start, chunk_end, has_snp, new_merged]'''
+    '''new_nodes: [node-id, chromosome, chunk_start, chunk_end, has_snp, new_merged]'''
     new_nodes, old_to_new_dict, new_to_old_dict = merge_chr_nodes(nodes_array, chr)
     print('number of nodes after merging:', new_nodes.shape[0])
     num_merged_nodes = new_nodes.shape[0]
     print('total number of merged nodes of the patient:', num_merged_nodes)
         
-    num_inter_chr_nodes = count_num_inter_chr_nodes(new_nodes, edges_array, new_to_old_dict, old_nodes_set)
+    '''new_nodes: [node-id, chromosome, chunk_start, chunk_end, has_snp, new_merged, inter_chr]'''    
+    num_inter_chr_nodes, new_nodes = count_num_inter_chr_nodes(new_nodes, edges_array, new_to_old_dict, old_nodes_set)
     print('number of inter chromosome nodes: ', num_inter_chr_nodes)
 
     print('-----------------------------------------------------------------')    
