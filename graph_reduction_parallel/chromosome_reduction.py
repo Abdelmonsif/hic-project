@@ -9,6 +9,7 @@ from graph_reduction_parallel import load_patient
 from graph_reduction_parallel import merge_edges
 import sys
 import networkx as nx
+import pandas as pd
 
 
 def get_args():
@@ -235,16 +236,24 @@ def chr_export_to_gexf(nodes_array, edges_array, reduced_chr_dir, chr, patient_d
     node_list = list(nodes_array[:,0]) # node list
     reduced_graph.add_nodes_from(node_list) # add nodes to graph
 
+    '''node attributes'''
+    print(nodes_array)
+    nodes_array_df = pd.DataFrame(data=nodes_array, columns=['node-id', 'chromosome', 'chunk_start', 'chunk_end', 'has_snp', 'new_merged'])
+    nodes_array_df = nodes_array_df[['node-id', 'has_snp', 'new_merged']]
+    nodes_array_df = nodes_array_df.set_index('node-id')
+    print(nodes_array_df)
+    node_attr = nodes_array_df.to_dict('index') # make node dictionary 
+    print(node_attr)
+    nx.set_node_attributes(reduced_graph, node_attr) # add node dictionary as node attributes
+    
     '''edges'''
     edge_list = list(zip(edges_array[:,0].astype(int), edges_array[:,1].astype(int))) # pairs of source and target as list of tuples
     reduced_graph.add_edges_from(edge_list) # add edges to graph
 
+    '''export'''
     nx.write_gexf(reduced_graph, gexf_path) # export the reduced graph as gexf file.
 
     '''
-    node_attr = self.nodes_reduced.to_dict('index') # make node dictionary 
-    nx.set_node_attributes(reduced_graph, node_attr) # add node dictionary as node attributes
-    
     # edges
     self.edges_reduced['edge_names'] = list(zip(self.edges_reduced.source, self.edges_reduced.target)) # add reduced edge list to reduced edge table
     self.edges_reduced.drop(columns=['source', 'target'], inplace=True)# drop source and target column
@@ -252,7 +261,6 @@ def chr_export_to_gexf(nodes_array, edges_array, reduced_chr_dir, chr, patient_d
     self.edges_reduced.set_index('edge_names', inplace=True)# make new edge names index
     edge_attr = self.edges_reduced.to_dict('index') # make dictionary of edge attributes    
     nx.set_edge_attributes(reduced_graph, edge_attr)
-    
     '''
 
 
