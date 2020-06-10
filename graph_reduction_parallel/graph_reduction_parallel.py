@@ -414,7 +414,7 @@ def merge_edges(edges_array, old_to_new_dict, num_processes):
         new_edge = np.median(old_edges, axis=0)
         new_edges.append(new_edge)
         num_edges_processed = num_edges_processed + 1
-        if num_edges_processed%100 == 0:
+        if num_edges_processed%500 == 0:
             print('     number of new edges computed:', num_edges_processed)
         #if num_edges_processed == 3000:
         #    break
