@@ -318,7 +318,10 @@ if __name__ == "__main__":
     print('number of intra chromosome edges before merging:', intra_chr_edges.shape[0])
 
     new_edges = merge_edges(edges_array = intra_chr_edges, old_to_new_dict = old_to_new_dict, num_processes=1)
-    print('number of new edges (intra) after merging:', new_edges.shape[0])
+    if new_edges is None:
+        print('number of new edges (intra) after merging:', 0)
+    else:
+        print('number of new edges (intra) after merging:', new_edges.shape[0])
 
     chr_export_to_gexf(new_nodes, new_edges, reduced_chr_dir, chr, patient_dir)
 
