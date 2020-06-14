@@ -79,7 +79,7 @@ def get_args():
     return parser.parse_args()
 
 
-def merge_chr_nodes(nodes_array, chr):
+def merge_chr_nodes(nodes_array_chr):
     """
     Merge the nodes of a single chromosome. 
     nodes_array: numpy array containing all nodes of the patient. It has the following columns:
@@ -92,7 +92,7 @@ def merge_chr_nodes(nodes_array, chr):
     '''compute nodes to merge for this chromosome'''
     to_merge = []
     merged_node = []
-    for row in nodes_array[nodes_array[:,1]==chr, :]: # for each row in this chromosome
+    for row in nodes_array_chr: # for each row in this chromosome
         #print(row)
         if row[4]==0:
             merged_node.append(row[0]) # append node id to merge
@@ -106,7 +106,7 @@ def merge_chr_nodes(nodes_array, chr):
         to_merge.append(merged_node)
 
     '''compute merged node table for this chromosome'''
-    nodes_array_copy = nodes_array[nodes_array[:,1]==chr, :] # nodes of corresponding chromosomes
+    nodes_array_copy = nodes_array_chr # nodes of corresponding chromosomes
     idx_to_remove = []
     for old_nodes in to_merge: # difficult to parallelize because processes will be modifying shared array.
         for old_node in old_nodes:
@@ -126,7 +126,7 @@ def merge_chr_nodes(nodes_array, chr):
         for nodes in to_merge:
             nodes_array_sub = [] # get sub-array of nodes to merge
             for node in nodes: # get the corresponding sub-array node table
-                nodes_array_sub.append(nodes_array[np.nonzero(nodes_array[:,0]==node)])
+                nodes_array_sub.append(nodes_array_chr[np.nonzero(nodes_array_chr[:,0]==node)])
             nodes_array_sub = np.concatenate(nodes_array_sub)
             new_node_id = nodes_array_sub[0, 0] # use first old node id as merged node id
             chromosome =  nodes_array_sub[0, 1] # chromosome of new node
@@ -153,12 +153,11 @@ def merge_chr_nodes(nodes_array, chr):
         return np.empty(shape=(0, 0)), {}, {}
 
 
-def find_node_set(nodes_array, chr):
+def find_node_set(nodes_array_chr):
     """
     Given a node table and the chromosome number, return a set of node numbers.
     """
-    nodes_array = nodes_array[nodes_array[:,1]==chr, :]
-    nodes_set = set(nodes_array[:,0])
+    nodes_set = set(nodes_array_chr[:,0])
     return nodes_set
 
 
@@ -284,39 +283,41 @@ if __name__ == "__main__":
 
     np.set_printoptions(threshold=sys.maxsize)
 
-    print('computing info for chromosome {}'.format(chr))
-
+    print('*****************************************************************')
+    print('loading the main graph and preprocessing...')
     nodes_array, edges_array, snp_map, node_id_set = load_graph(node_dir, edge_dir, snps_dir)
     
+    '''nodes_array: [node-id, chromosome, chunk_start, chunk_end, has_snp]'''
     nodes_array = load_patient(nodes_array, patient_dir, snp_map, node_id_set, snp_weight_dir, snp_weight_th=0.00016)
-    #print(nodes_array)
+    print('total number of nodes in main graph: ', nodes_array.shape[0])
+    print('total number of SNP nodes in main graph: ', np.count_nonzero(nodes_array[:,4]==1))
 
     edges_array = filter_edges(edges_array, th=0.05) # filter out unimportant edges
-    #print(edges_array)
+    print('total number of edges in main graph: ', edges_array.shape[0])
 
     print('-----------------------------------------------------------------') 
-    print('computing merged nodes of chromosome {}'.format(chr))
-    print('number of nodes before merging:', nodes_array[nodes_array[:,1]==chr, :].shape[0])
-    old_nodes_set = find_node_set(nodes_array, chr) # set of original nodes of this chromosome        
-    #print('set of old nodes: ', old_nodes_set)
+    print('merging nodes of chromosome {}...'.format(chr))
+    nodes_array_chr = nodes_array[nodes_array[:,1]==chr, :]
+    print('number of nodes of chromosome {} before merging: {}'.format(chr, nodes_array_chr.shape[0]))
+    print('number of SNP nodes before merging: ', np.count_nonzero(nodes_array_chr[:,4]==1))
+    old_nodes_set = find_node_set(nodes_array_chr) # set of original nodes of this chromosome        
 
     '''new_nodes: [node-id, chromosome, chunk_start, chunk_end, has_snp, new_merged]'''
-    new_nodes, old_to_new_dict, new_to_old_dict = merge_chr_nodes(nodes_array, chr)
-    print('number of nodes after merging:', new_nodes.shape[0])
-    num_merged_nodes = new_nodes.shape[0]
-    print('total number of merged nodes of the patient:', num_merged_nodes)
-        
+    new_nodes, old_to_new_dict, new_to_old_dict = merge_chr_nodes(nodes_array_chr)
     '''new_nodes: [node-id, chromosome, chunk_start, chunk_end, has_snp, new_merged, inter_chr]'''    
     num_inter_chr_nodes, new_nodes = count_num_inter_chr_nodes(new_nodes, edges_array, new_to_old_dict, old_nodes_set)
-    print('number of inter chromosome nodes: ', num_inter_chr_nodes)
+    print('total number of nodes of chromosome {} after merging: {}'.format(chr, new_nodes.shape[0]))
+    print('number of SNP nodes after merging: ', np.count_nonzero(new_nodes[:,4]==1))
+    print('number of inter chromosome nodes after merging: ', num_inter_chr_nodes)
 
     print('-----------------------------------------------------------------')    
+    print('merging edges of chromosome {}...'.format(chr))
+
     intra_chr_edges = compute_intra_chr_edges(edges_array, old_nodes_set)
     print('number of intra chromosome edges before merging:', intra_chr_edges.shape[0])
 
-    print('computing the merged edges...')
     new_edges = merge_edges(edges_array = intra_chr_edges, old_to_new_dict = old_to_new_dict, num_processes=1)
-    print('number of new edges after merging:', new_edges.shape[0])
+    print('number of new edges (intra) after merging:', new_edges.shape[0])
 
     chr_export_to_gexf(new_nodes, new_edges, reduced_chr_dir, chr, patient_dir)
 
