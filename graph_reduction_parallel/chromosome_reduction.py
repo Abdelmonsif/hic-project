@@ -249,12 +249,13 @@ def chr_export_to_gexf(nodes_array, edges_array, reduced_chr_dir, chr, patient_d
     nx.set_node_attributes(reduced_graph, node_attr) # add node dictionary as node attributes
     
     '''edges'''
-    edge_list = list(zip(edges_array[:,0].astype(int), edges_array[:,1].astype(int))) # pairs of source and target as list of tuples
-    reduced_graph.add_edges_from(edge_list) # add edges to graph
-
-    '''export'''
-    nx.write_gexf(reduced_graph, gexf_path) # export the reduced graph as gexf file.
-
+    if edges_array is None: # for chromosome 12, it is possible that there is only 1 node after reduction, thus there is no newly merged edges.
+        nx.write_gexf(reduced_graph, gexf_path) # export the reduced graph as gexf file.
+    else:
+        edge_list = list(zip(edges_array[:,0].astype(int), edges_array[:,1].astype(int))) # pairs of source and target as list of tuples
+        reduced_graph.add_edges_from(edge_list) # add edges to graph
+        nx.write_gexf(reduced_graph, gexf_path) # export the reduced graph as gexf file.
+   
     '''
     # edges
     self.edges_reduced['edge_names'] = list(zip(self.edges_reduced.source, self.edges_reduced.target)) # add reduced edge list to reduced edge table
